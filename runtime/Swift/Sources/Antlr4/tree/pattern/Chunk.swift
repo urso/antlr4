@@ -23,6 +23,6 @@ public class Chunk: Equatable {
     }
 
     public func isEqual(_ other: Chunk) -> Bool {
-        return self === other
+        return false
     }
 }

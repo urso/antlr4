@@ -37,15 +37,15 @@
 // Description
 // -----------
 // This is the definitive lexer grammar for parsing ANTLR V3.x.x grammars. All other
-// grammars are derived from this grammar via source code control integration (perforce)
+// gramnmars are derived from this grammar via source code control integration (perforce)
 // or by the gdiff tool.
 //
-// This grammar and its associated grammars A3Parser.g and A3Walker.g exhibit the following
+// This grammar and its associated grmmmars A3Parser.g and A3Walker.g exhibit the following
 // traits, which are recommended for all production quality grammars:
 //
 // 1) They are separate grammars, not composite grammars;
 // 2) They implement all supporting methods in a superclass (at least this is recommended
-//    for language targets that support inheritance;
+//    for language targets that support inheritence;
 // 3) All errors are pushed as far down the parsing chain as possible, which means
 //    that the lexer tries to defer error reporting to the parser, and the parser
 //    tries to defer error reporting to a semantic phase consisting of a single
@@ -163,26 +163,14 @@ import org.antlr.v4.runtime.misc.Interval;
 	 *  Return token or null if for some reason we can't find the start.
 	 */
 	public Token getRuleOrSubruleStartToken() {
-		if (tokens == null) return null;
+	    if ( tokens==null ) return null;
 		int i = tokens.index();
-		int n = tokens.size();
-		if (i >= n) i = n - 1; // seems index == n as we lex
-		boolean withinOptionsBlock = false;
-		while (i >= 0 && i < n) {
+        int n = tokens.size();
+        if ( i>=n ) i = n-1; // seems index == n as we lex
+		while ( i>=0 && i<n) {
 			int ttype = tokens.get(i).getType();
-			if (withinOptionsBlock) {
-				// Ignore rule options content
-				if (ttype == OPTIONS) {
-					withinOptionsBlock = false;
-				}
-			}
-			else {
-				if (ttype == RBRACE) {
-					withinOptionsBlock = true;
-				}
-				else if (ttype == LPAREN || ttype == TOKEN_REF || ttype == RULE_REF) {
-					return tokens.get(i);
-				}
+			if ( ttype == LPAREN || ttype == TOKEN_REF || ttype == RULE_REF ) {
+				return tokens.get(i);
 			}
 			i--;
 		}
@@ -197,7 +185,7 @@ import org.antlr.v4.runtime.misc.Interval;
 // which particularly. However we also accept Javadoc style comments
 // of the form: /** ... */ and we do take care to distinguish those
 // from ordinary multi-line comments
-// Note how we guide the lexical PATH because we want to issue a descriptive
+// Note how we guide the lexical PATH because we want to issue a decriptive
 // error message in case of a standalone '/' character, which makes no
 // sense in ANTLR source code. We alo trap unterminated multi-line comments
 //
@@ -227,11 +215,11 @@ COMMENT
           '/'
             (
                 (' $ANTLR')=> ' $ANTLR' SRC
-              | ~NLCHARS*
+              | ~(NLCHARS)*
             )
 
          | // Multi-line comment, which may be a documentation comment
-           // if it starts /** (note that we protect against accidentally
+           // if it starts /** (note that we protect against accidentaly
            // recognizing a comment /**/ as a documentation comment
            //
            '*' (
@@ -342,7 +330,18 @@ ARG_ACTION
 // the delimiting {} is no additional overhead.
 //
 ACTION
-	:	NESTED_ACTION (	'?' {$type = SEMPRED;} )?
+	:	NESTED_ACTION
+		(	'?' {$type = SEMPRED;}
+			(	(WSNLCHARS* '=>') => WSNLCHARS* '=>' // v3 gated sempred
+				{
+				Token t = new CommonToken(input, state.type, state.channel, state.tokenStartCharIndex, getCharIndex()-1);
+				t.setLine(state.tokenStartLine);
+				t.setText(state.text);
+				t.setCharPositionInLine(state.tokenStartCharPositionInLine);
+				grammarError(ErrorType.V3_GATED_SEMPRED, t);
+				}
+			)?
+		)?
 	;
 
 // ----------------
@@ -353,7 +352,7 @@ ACTION
 // braces. Additionally, we must make some assumptions about
 // literal string representation in the target language. We assume
 // that they are delimited by ' or " and so consume these
-// in their own alts so as not to inadvertently match {}.
+// in their own alts so as not to inadvertantly match {}.
 // This rule calls itself on matching a {
 //
 fragment
@@ -377,7 +376,7 @@ NESTED_ACTION
 	    // elements within the action until we find a
 	    // } that balances the opening {. If we do not find
 	    // the balanced } then we will hit EOF and can issue
-	    // an error message about the brace that we believe to
+	    // an error message about the brace that we belive to
 	    // be mismatched. This won't be foolproof but we will
 	    // be able to at least report an error against the
 	    // opening brace that we feel is in error and this will
@@ -418,7 +417,7 @@ NESTED_ACTION
 	    //
 	    '}'
 
-	  | // Looks like have an imbalanced {} block, report
+	  | // Looks like have an imblanced {} block, report
 	    // with respect to the opening brace.
 	    //
 	    {
@@ -431,8 +430,9 @@ NESTED_ACTION
 
 // Keywords
 // --------
-// Keywords may not be used as labels for rules or in any other context
-// where they would be ambiguous with the keyword vs some other identifier
+// keywords used to specify ANTLR v3 grammars. Keywords may not be used as
+// labels for rules or in any other context where they would be ambiguous
+// with the keyword vs some other identifier
 // OPTIONS, TOKENS, and CHANNELS must also consume the opening brace that captures
 // their option block, as this is the easiest way to parse it separate
 // to an ACTION block, despite it using the same {} delimiters.
@@ -446,6 +446,10 @@ FRAGMENT     : 'fragment'             ;
 LEXER        : 'lexer'                ;
 PARSER       : 'parser'               ;
 GRAMMAR      : 'grammar'              ;
+TREE_GRAMMAR : 'tree' WSNLCHARS* 'grammar' ;
+PROTECTED    : 'protected'            ;
+PUBLIC       : 'public'               ;
+PRIVATE      : 'private'              ;
 RETURNS      : 'returns'              ;
 LOCALS       : 'locals'               ;
 THROWS       : 'throws'               ;
@@ -456,7 +460,7 @@ MODE         : 'mode'                 ;
 // -----------
 // Punctuation
 //
-// Character sequences used as separators, delimiters, operators, etc
+// Character sequences used as separators, delimters, operators, etc
 //
 COLON        : ':'
                {
@@ -484,6 +488,17 @@ LT           : '<'                    ;
 GT           : '>'                    ;
 ASSIGN       : '='                    ;
 QUESTION     : '?'                    ;
+SYNPRED      : '=>'
+			   {
+			    Token t = new CommonToken(input, state.type, state.channel,
+			                              state.tokenStartCharIndex, getCharIndex()-1);
+				t.setLine(state.tokenStartLine);
+				t.setText(state.text);
+				t.setCharPositionInLine(state.tokenStartCharPositionInLine);
+				grammarError(ErrorType.V3_SYNPRED, t);
+                $channel=HIDDEN;
+				}
+             ;
 STAR         : '*'                    ;
 PLUS         : '+'                    ;
 PLUS_ASSIGN  : '+='                   ;
@@ -543,7 +558,7 @@ NameStartChar
 
 // Within actions, or other structures that are not part of the ANTLR
 // syntax, we may encounter literal characters. Within these, we do
-// not want to inadvertently match things like '}' and so we eat them
+// not want to inadvertantly match things like '}' and so we eat them
 // specifically. While this rule is called CHAR it allows for the fact that
 // some languages may use/allow ' as the string delimiter.
 //
@@ -554,7 +569,7 @@ ACTION_CHAR_LITERAL
 
 // Within actions, or other structures that are not part of the ANTLR
 // syntax, we may encounter literal strings. Within these, we do
-// not want to inadvertently match things like '}' and so we eat them
+// not want to inadvertantly match things like '}' and so we eat them
 // specifically.
 //
 fragment
@@ -564,8 +579,8 @@ ACTION_STRING_LITERAL
 
 // Within literal strings and characters that are not part of the ANTLR
 // syntax, we must allow for escaped character sequences so that we do not
-// inadvertently recognize the end of a string or character when the terminating
-// delimiter has been escaped.
+// inadvertantly recognize the end of a string or character when the terminating
+// delimiter has been esacped.
 //
 fragment
 ACTION_ESC
@@ -575,7 +590,7 @@ ACTION_ESC
 // -------
 // Integer
 //
-// Obviously (I hope) match an arbitrary long sequence of digits.
+// Obviously (I hope) match an aribtrary long sequence of digits.
 //
 INT : ('0'..'9')+
     ;
@@ -583,7 +598,7 @@ INT : ('0'..'9')+
 // -----------
 // Source spec
 //
-// A fragment rule for picking up information about an originating
+// A fragment rule for picking up information about an origrinating
 // file from which the grammar we are parsing has been generated. This allows
 // ANTLR to report errors against the originating file and not the generated
 // file.
@@ -599,7 +614,7 @@ SRC : 'src' WSCHARS+ file=ACTION_STRING_LITERAL WSCHARS+ line=INT
 // --------------
 // Literal string
 //
-// ANTLR makes no distinction between a single character literal and a
+// ANTLR makes no disticintion between a single character literal and a
 // multi-character string. All literals are single quote delimited and
 // may contain unicode escape sequences of the form \uxxxx or \u{xxxxxx},
 // where x is a valid hexadecimal number.
@@ -638,7 +653,7 @@ ESC_SEQ
             | // A Swift/Hack style Unicode escape sequence
               UNICODE_EXTENDED_ESC
 
-    	    | // An illegal escape sequence
+    	    | // An illegal escape seqeunce
     	      ~('b'|'t'|'n'|'f'|'r'|'\''|'\\'|'u') // \x for any invalid x (make sure to match char here)
     	      {
                 Token t = new CommonToken(input, state.type, state.channel, getCharIndex()-2, getCharIndex()-1);
@@ -664,7 +679,7 @@ UNICODE_ESC
         // We now require 4 hex digits. Note though
         // that we accept any number of characters
         // and issue an error if we do not get 4. We cannot
-        // use an infinite count such as + because this
+        // use an inifinite count such as + because this
         // might consume too many, so we lay out the lexical
         // options and issue an error at the invalid paths.
         //

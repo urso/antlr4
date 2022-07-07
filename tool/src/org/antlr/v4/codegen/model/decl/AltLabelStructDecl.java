@@ -21,9 +21,10 @@ public class AltLabelStructDecl extends StructDecl {
 	public AltLabelStructDecl(OutputModelFactory factory, Rule r,
 							  int altNum, String label)
 	{
-		// override name set in super to the label ctx
-		super(factory, r, factory.getGenerator().getTarget().getAltLabelContextStructName(label));
+		super(factory, r);
 		this.altNum = altNum;
+		this.name = // override name set in super to the label ctx
+			factory.getGenerator().getTarget().getAltLabelContextStructName(label);
 		this.parentRule = r.name;
 		derivedFromName = label;
 	}

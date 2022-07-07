@@ -37,7 +37,8 @@ public abstract class ContextGetterDecl extends Decl {
 		if ( this==obj ) return true;
 		// A() and label A are different
 		if ( !(obj instanceof ContextGetterDecl) ) return false;
-		return name.equals(((Decl) obj).name) &&
+		return
+			name.equals(((Decl) obj).name) &&
 				getArgType().equals(((ContextGetterDecl) obj).getArgType());
 	}
 }

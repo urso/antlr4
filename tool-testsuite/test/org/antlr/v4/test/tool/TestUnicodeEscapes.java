@@ -7,6 +7,7 @@
 package org.antlr.v4.test.tool;
 
 import org.antlr.v4.codegen.UnicodeEscapes;
+
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -14,53 +15,64 @@ import static org.junit.Assert.assertEquals;
 public class TestUnicodeEscapes {
 	@Test
 	public void latinJavaEscape() {
-		checkUnicodeEscape("\\u0061", 0x0061, "Java");
+		StringBuilder sb = new StringBuilder();
+		UnicodeEscapes.appendJavaStyleEscapedCodePoint(0x0061, sb);
+		assertEquals("\\u0061", sb.toString());
 	}
 
 	@Test
 	public void latinPythonEscape() {
-		checkUnicodeEscape("\\u0061", 0x0061, "Python2");
-		checkUnicodeEscape("\\u0061", 0x0061, "Python3");
+		StringBuilder sb = new StringBuilder();
+		UnicodeEscapes.appendPythonStyleEscapedCodePoint(0x0061, sb);
+		assertEquals("\\u0061", sb.toString());
 	}
 
 	@Test
 	public void latinSwiftEscape() {
-		checkUnicodeEscape("\\u{0061}", 0x0061, "Swift");
+		StringBuilder sb = new StringBuilder();
+		UnicodeEscapes.appendSwiftStyleEscapedCodePoint(0x0061, sb);
+		assertEquals("\\u{0061}", sb.toString());
 	}
 
 	@Test
 	public void bmpJavaEscape() {
-		checkUnicodeEscape("\\uABCD", 0xABCD, "Java");
+		StringBuilder sb = new StringBuilder();
+		UnicodeEscapes.appendJavaStyleEscapedCodePoint(0xABCD, sb);
+		assertEquals("\\uABCD", sb.toString());
 	}
 
 	@Test
 	public void bmpPythonEscape() {
-		checkUnicodeEscape("\\uABCD", 0xABCD, "Python2");
-		checkUnicodeEscape("\\uABCD", 0xABCD, "Python3");
+		StringBuilder sb = new StringBuilder();
+		UnicodeEscapes.appendPythonStyleEscapedCodePoint(0xABCD, sb);
+		assertEquals("\\uABCD", sb.toString());
 	}
 
 	@Test
 	public void bmpSwiftEscape() {
-		checkUnicodeEscape("\\u{ABCD}", 0xABCD, "Swift");
+		StringBuilder sb = new StringBuilder();
+		UnicodeEscapes.appendSwiftStyleEscapedCodePoint(0xABCD, sb);
+		assertEquals("\\u{ABCD}", sb.toString());
 	}
 
 	@Test
 	public void smpJavaEscape() {
-		checkUnicodeEscape("\\uD83D\\uDCA9", 0x1F4A9, "Java");
+		StringBuilder sb = new StringBuilder();
+		UnicodeEscapes.appendJavaStyleEscapedCodePoint(0x1F4A9, sb);
+		assertEquals("\\uD83D\\uDCA9", sb.toString());
 	}
 
 	@Test
 	public void smpPythonEscape() {
-		checkUnicodeEscape("\\U0001F4A9", 0x1F4A9, "Python2");
-		checkUnicodeEscape("\\U0001F4A9", 0x1F4A9, "Python3");
+		StringBuilder sb = new StringBuilder();
+		UnicodeEscapes.appendPythonStyleEscapedCodePoint(0x1F4A9, sb);
+		assertEquals("\\U0001F4A9", sb.toString());
 	}
 
 	@Test
 	public void smpSwiftEscape() {
-		checkUnicodeEscape("\\u{1F4A9}", 0x1F4A9, "Swift");
-	}
-
-	private void checkUnicodeEscape(String expected, int input, String language) {
-		assertEquals(expected, UnicodeEscapes.escapeCodePoint(input, language));
+		StringBuilder sb = new StringBuilder();
+		UnicodeEscapes.appendSwiftStyleEscapedCodePoint(0x1F4A9, sb);
+		assertEquals("\\u{1F4A9}", sb.toString());
 	}
 }

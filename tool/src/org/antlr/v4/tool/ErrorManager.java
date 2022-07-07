@@ -61,7 +61,7 @@ public class ErrorManager {
 		}
 		if (msg.fileName != null) {
 			String displayFileName = msg.fileName;
-			if (formatName.equals("antlr")) {
+			if (format.equals("antlr")) {
 				// Don't show path to file in messages in ANTLR format;
 				// they're too long.
 				File f = new File(msg.fileName);
@@ -206,8 +206,6 @@ public class ErrorManager {
 				errors++;
 				tool.error(msg);
 				break;
-      default:
-        break;
 		}
 		errorTypes.add(etype);
 	}

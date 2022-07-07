@@ -9,16 +9,12 @@
 	<parent>
 		<groupId>org.antlr</groupId>
 		<artifactId>antlr4-master</artifactId>
-		<version>4.10.2-SNAPSHOT</version>
+		<version>4.9.4-SNAPSHOT</version>
 		<relativePath>../../pom.xml</relativePath>
 	</parent>
 	<artifactId>antlr4-runtime</artifactId>
 	<name>ANTLR 4 Runtime</name>
 	<description>The ANTLR 4 Runtime</description>
-
-    <prerequisites>
-        <maven>3.8</maven>
-    </prerequisites>
 
 	<properties>
 		<!-- Assumes dot is in the system path, or specified for the build. -->
@@ -31,7 +27,7 @@
 			<plugin> <!-- create src jar -->
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
-				<version>3.2.1</version>
+				<version>3.0.1</version>
 				<executions>
 					<execution>
 						<goals>
@@ -46,6 +42,7 @@
 				<version>1.0</version>
 				<executions>
 					<execution>
+						<phase>deploy</phase>
 						<goals>
 							<goal>dot</goal>
 						</goals>
@@ -60,9 +57,9 @@
 			<plugin> <!-- create javadoc jar -->
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-javadoc-plugin</artifactId>
-				<version>3.3.1</version>
+				<version>2.10.4</version>
 				<configuration>
-					<javadocVersion>1.8</javadocVersion>
+					<javadocVersion>1.7</javadocVersion>
 					<failOnError>false</failOnError>
 				</configuration>
 				<executions>
@@ -74,9 +71,25 @@
 				</executions>
 			</plugin>
 			<plugin>
+				<groupId>org.antlr</groupId>
+				<artifactId>antlr4-maven-plugin</artifactId>
+				<version>4.5.3</version> <!-- use older version to process XPathLexer.g4, avoiding cyclic build dependency -->
+				<executions>
+					<execution>
+						<id>antlr</id>
+						<configuration>
+							<sourceDirectory>src</sourceDirectory>
+						</configuration>
+						<goals>
+							<goal>antlr4</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
 				<groupId>org.apache.felix</groupId>
 				<artifactId>maven-bundle-plugin</artifactId>
-				<version>5.1.2</version>
+				<version>2.5.4</version>
 				<executions>
 					<execution>
 						<id>bundle-manifest</id>
@@ -95,7 +108,7 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-jar-plugin</artifactId>
-				<version>3.2.0</version>
+				<version>3.0.0</version>
 				<configuration>
 					<archive>
 						<manifest>
@@ -103,16 +116,6 @@
 						</manifest>
 						<manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
 					</archive>
-				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.8.1</version>
-				<configuration>
-					<release>8</release>
-					<source>1.8</source>
-					<target>1.8</target>
 				</configuration>
 			</plugin>
 		</plugins>

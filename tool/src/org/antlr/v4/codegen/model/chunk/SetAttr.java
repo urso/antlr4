@@ -12,11 +12,13 @@ import org.antlr.v4.codegen.model.decl.StructDecl;
 import java.util.List;
 
 /** */
-public class SetAttr extends SymbolRefChunk {
+public class SetAttr extends ActionChunk {
+	public String name;
 	@ModelElement public List<ActionChunk> rhsChunks;
 
-	public SetAttr(StructDecl ctx, String name, String escapedName, List<ActionChunk> rhsChunks) {
-		super(ctx, name, escapedName);
+	public SetAttr(StructDecl ctx, String name, List<ActionChunk> rhsChunks) {
+		super(ctx);
+		this.name = name;
 		this.rhsChunks = rhsChunks;
 	}
 }

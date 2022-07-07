@@ -47,7 +47,7 @@ TokenStartColumnEquals(i) ::= "tokenStartCharPositionInLine == <i>"
 
 ImportListener(X) ::= ""
 
-GetExpectedTokenNames() ::= "getExpectedTokens().toString(getVocabulary())"
+GetExpectedTokenNames() ::= "getExpectedTokens().toString(_tokenNames)"
 
 RuleInvocationStack() ::= "Arrays::listToString(getRuleInvocationStack(), \", \")"
 
@@ -92,11 +92,8 @@ protected:
 public:
   virtual std::unique_ptr\<antlr4::Token> nextToken() override {
     if (dynamic_cast\<PositionAdjustingLexerATNSimulator *>(_interpreter) == nullptr) {
-      const auto &atn = _interpreter->atn;
-      auto &decisionToDFA = dynamic_cast\<antlr4::atn::LexerATNSimulator*>(_interpreter)->_decisionToDFA;
-      auto &sharedContextCache = dynamic_cast\<antlr4::atn::LexerATNSimulator*>(_interpreter)->getSharedContextCache();
       delete _interpreter;
-      _interpreter = new PositionAdjustingLexerATNSimulator(this, atn, decisionToDFA, sharedContextCache);
+      _interpreter = new PositionAdjustingLexerATNSimulator(this, _atn, _decisionToDFA, _sharedContextCache);
     }
 
     return antlr4::Lexer::nextToken();

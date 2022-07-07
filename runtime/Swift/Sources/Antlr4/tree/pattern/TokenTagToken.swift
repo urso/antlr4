@@ -78,8 +78,8 @@ public class TokenTagToken: CommonToken {
     /// 
     override
     public func getText() -> String {
-        if let label = label {
-            return "<" + label + ":" + tokenName + ">"
+        if label != nil {
+            return "<" + label! + ":" + tokenName + ">"
         }
 
         return "<" + tokenName + ">"

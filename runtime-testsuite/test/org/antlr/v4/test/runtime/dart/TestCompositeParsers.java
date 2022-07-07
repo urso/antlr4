@@ -8,8 +8,11 @@ package org.antlr.v4.test.runtime.dart;
 
 import org.antlr.v4.test.runtime.BaseRuntimeTest;
 import org.antlr.v4.test.runtime.RuntimeTestDescriptor;
+import org.antlr.v4.test.runtime.descriptors.CompositeParsersDescriptors;
+import org.antlr.v4.test.runtime.dart.BaseDartTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
 @RunWith(Parameterized.class)
 public class TestCompositeParsers extends BaseRuntimeTest {
 	public TestCompositeParsers(RuntimeTestDescriptor descriptor) {
@@ -18,6 +21,6 @@ public class TestCompositeParsers extends BaseRuntimeTest {
 
 	@Parameterized.Parameters(name="{0}")
 	public static RuntimeTestDescriptor[] getAllTestDescriptors() {
-		return BaseRuntimeTest.getRuntimeTestDescriptors("CompositeParsers", "Dart");
+		return BaseRuntimeTest.getRuntimeTestDescriptors(CompositeParsersDescriptors.class, "Dart");
 	}
 }

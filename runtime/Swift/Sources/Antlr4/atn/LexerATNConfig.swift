@@ -108,11 +108,30 @@ public func ==(lhs: LexerATNConfig, rhs: LexerATNConfig) -> Bool {
         return false
     }
 
-    if lhs.getLexerActionExecutor() != rhs.getLexerActionExecutor() {
+    if lhs.getLexerActionExecutor() == nil && rhs.getLexerActionExecutor() != nil {
+        return false
+    } else if lhs.getLexerActionExecutor() != nil && rhs.getLexerActionExecutor() == nil {
+        return false
+    } else if lhs.getLexerActionExecutor() == nil && rhs.getLexerActionExecutor() == nil {
+
+    } else if !(lhs.getLexerActionExecutor()! == rhs.getLexerActionExecutor()!) {
         return false
     }
 
-    if lhs.context != rhs.context {
+
+    var contextCompare = false
+
+    if lhs.context == nil && rhs.context == nil {
+        contextCompare = true
+    } else if lhs.context == nil && rhs.context != nil {
+        contextCompare = false
+    } else if lhs.context != nil && rhs.context == nil {
+        contextCompare = false
+    } else {
+        contextCompare = (lhs.context! == rhs.context!)
+    }
+
+    if !contextCompare{
         return false
     }
 

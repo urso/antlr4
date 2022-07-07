@@ -6,7 +6,6 @@ import org.antlr.v4.automata.ParserATNFactory;
 import org.antlr.v4.runtime.atn.ATN;
 import org.antlr.v4.runtime.atn.ATNDeserializer;
 import org.antlr.v4.runtime.atn.ATNSerializer;
-import org.antlr.v4.runtime.misc.IntegerList;
 import org.antlr.v4.semantics.SemanticPipeline;
 import org.antlr.v4.tool.Grammar;
 import org.antlr.v4.tool.LexerGrammar;
@@ -17,7 +16,9 @@ import org.junit.runner.Description;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.*;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.util.Locale;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
@@ -40,12 +41,6 @@ public abstract class BaseRuntimeTestSupport implements RuntimeTestSupport {
 
 	/** Errors found while running antlr */
 	private StringBuilder antlrToolErrors;
-
-	public static String cachingDirectory;
-
-	static {
-		cachingDirectory = new File(System.getProperty("java.io.tmpdir"), "ANTLR-runtime-testsuite-cache").getAbsolutePath();
-	}
 
 	@org.junit.Rule
 	public final TestRule testWatcher = new TestWatcher() {
@@ -220,14 +215,12 @@ public abstract class BaseRuntimeTestSupport implements RuntimeTestSupport {
 
 		ATN atn = g.atn;
 		if ( useSerializer ) {
-			// sets some flags in ATN
-			IntegerList serialized = ATNSerializer.getSerialized(atn);
-			return new ATNDeserializer().deserialize(serialized.toArray());
+			char[] serialized = ATNSerializer.getSerializedAsChars(atn);
+			return new ATNDeserializer().deserialize(serialized);
 		}
 
 		return atn;
 	}
-
 	protected void semanticProcess(Grammar g) {
 		if ( g.ast!=null && !g.ast.hasErrors ) {
 //			System.out.println(g.ast.toStringTree());

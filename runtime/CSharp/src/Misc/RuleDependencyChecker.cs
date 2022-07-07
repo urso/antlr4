@@ -330,12 +330,12 @@ namespace Antlr4.Runtime.Misc
 
         private static RuleDependencyChecker.RuleRelations ExtractRuleRelations(TypeInfo recognizer)
         {
-            int[] serializedATN = GetSerializedATN(recognizer);
+            string serializedATN = GetSerializedATN(recognizer);
             if (serializedATN == null)
             {
                 return null;
             }
-            ATN atn = new ATNDeserializer().Deserialize(serializedATN);
+            ATN atn = new ATNDeserializer().Deserialize(serializedATN.ToCharArray());
             RuleDependencyChecker.RuleRelations relations = new RuleDependencyChecker.RuleRelations(atn.ruleToStartState.Length);
             foreach (ATNState state in atn.states)
             {
@@ -356,11 +356,11 @@ namespace Antlr4.Runtime.Misc
             return relations;
         }
 
-        private static int[] GetSerializedATN(TypeInfo recognizerClass)
+        private static string GetSerializedATN(TypeInfo recognizerClass)
         {
             FieldInfo serializedAtnField = recognizerClass.DeclaredFields.First(i => i.Name == "_serializedATN");
             if (serializedAtnField != null)
-                return (int[])serializedAtnField.GetValue(null);
+                return (string)serializedAtnField.GetValue(null);
 
             if (recognizerClass.BaseType != null)
                 return GetSerializedATN(recognizerClass.BaseType.GetTypeInfo());

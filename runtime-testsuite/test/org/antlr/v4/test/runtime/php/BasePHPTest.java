@@ -20,6 +20,7 @@ import org.stringtemplate.v4.ST;
 
 import static org.antlr.v4.test.runtime.BaseRuntimeTest.antlrOnString;
 import static org.antlr.v4.test.runtime.BaseRuntimeTest.writeFile;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class BasePHPTest extends BaseRuntimeTestSupport implements RuntimeTestSupport {
@@ -244,7 +245,7 @@ public class BasePHPTest extends BaseRuntimeTestSupport implements RuntimeTestSu
 			return phpPath;
 		}
 
-		String[] roots = {"/usr/local/bin/", "/opt/local/bin", "/opt/homebrew/bin/", "/usr/bin/"};
+		String[] roots = {"/usr/local/bin/", "/opt/local/bin", "/usr/bin/"};
 
 		for (String root: roots) {
 			if (new File(root + tool).exists()) {

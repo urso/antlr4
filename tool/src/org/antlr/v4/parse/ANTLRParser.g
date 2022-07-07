@@ -60,20 +60,36 @@ options {
 // specify any such tokens
 tokens {
     RULE;
+	PREC_RULE; // flip to this if we find that it's left-recursive
     RULES;
     RULEMODIFIERS;
+    RULEACTIONS;
     BLOCK;
     OPTIONAL;
     CLOSURE;
     POSITIVE_CLOSURE;
     RANGE;
     SET;
+    CHAR_RANGE;
     EPSILON;
     ALT;
+    ALTLIST;
     ID;
-    COMBINED;
+    ARG;
+    ARGLIST;
+    RET;
+	COMBINED;
+    INITACTION;
+    LABEL;                // $x used in rewrite rules
+    TEMPLATE;
     WILDCARD;
+    // A generic node indicating a list of something when we don't
+    // really need to distinguish what we have a list of as the AST
+    // will 'kinow' by context.
+    //
+    LIST;
     ELEMENT_OPTIONS;      // TOKEN<options>
+    RESULT;
 
     // lexer action stuff
     LEXER_ALT_ACTION;
@@ -181,6 +197,7 @@ if ( options!=null ) {
 
 grammarType
 @after {
+	if ( $tg!=null ) throw new v3TreeGrammarException(tg);
 	if ( $t!=null ) ((GrammarRootAST)$tree).grammarType = $t.type;
 	else ((GrammarRootAST)$tree).grammarType=COMBINED;
 }
@@ -190,6 +207,8 @@ grammarType
 
 		// A combined lexer and parser specification
 		| 	g=GRAMMAR          -> GRAMMAR<GrammarRootAST>[$g, "COMBINED_GRAMMAR", getTokenStream()]
+		|   tg=TREE_GRAMMAR
+
 		)
     ;
 
@@ -205,7 +224,7 @@ prequelConstruct
       delegateGrammars
 
     | // The declaration of any token types we need that are not already
-      // specified by a preceding grammar, such as when a parser declares
+      // specified by a preceeding grammar, such as when a parser declares
       // imaginary tokens with which to construct the AST, or a rewriting
       // tree parser adds further imaginary tokens to ones defined in a prior
       // {tree} parser.
@@ -252,7 +271,7 @@ delegateGrammars
 	;
 
 // A possibly named grammar file that should be imported to this grammar
-// and delegated to for the rules it specifies
+// and delgated to for the rules it specifies
 delegateGrammar
     :   id ASSIGN^ id
     |   id
@@ -261,13 +280,28 @@ delegateGrammar
 tokensSpec
 	: TOKENS_SPEC id (COMMA id)* RBRACE -> ^(TOKENS_SPEC id+)
     | TOKENS_SPEC RBRACE ->
+    | TOKENS_SPEC^ v3tokenSpec+ RBRACE!
+      {grammarError(ErrorType.V3_TOKENS_SYNTAX, $TOKENS_SPEC);}
+	;
+
+v3tokenSpec
+	:	id
+		(	ASSIGN lit=STRING_LITERAL
+            {
+            grammarError(ErrorType.V3_ASSIGN_IN_TOKENS, $id.start,
+                         $id.text, $lit.getText());
+            }
+						            	-> id // ignore assignment
+		|								-> id
+		)
+		SEMI
 	;
 
 channelsSpec
 	:	CHANNELS^ id (COMMA! id)* RBRACE!
 	;
 
-// A declaration of a language target specific section,
+// A declaration of a language target specifc section,
 // such as @header, @includes and so on. We do not verify these
 // sections, they are just passed on to the language target.
 /** Match stuff like @parser::members {int i;} */
@@ -339,7 +373,7 @@ parserRule
 	  // Immediately following the rulename, there may be a specification
 	  // of input parameters for the rule. We do not do anything with the
 	  // parameters here except gather them for future phases such as
-	  // semantic verification, type assignment etc. We require that
+	  // semantic verifcation, type assignment etc. We require that
 	  // the input parameters are the next syntactically significant element
 	  // following the rule id.
 	  ARG_ACTION?
@@ -358,8 +392,8 @@ parserRule
 // At the rule level, a programmer may specify a number of sections, such
 // as scope declarations, rule return elements, @ sections (which may be
 // language target specific) and so on. We allow any number of these in any
-// order here and as usual rely on the semantic verification phase to reject
-// anything invalid using its additional context information. Here we are
+// order here and as usual rely onthe semantic verification phase to reject
+// anything invalid using its addinotal context information. Here we are
 // context free and just accept anything that is a syntactically correct
 // construct.
 //
@@ -382,7 +416,7 @@ parserRule
 
 // Many language targets support exceptions and the rule will
 // generally be able to throw the language target equivalent
-// of a recognition exception. The grammar programmer can
+// of a recognition exception. The grammar programmar can
 // specify a list of exceptions to catch or a generic catch all
 // and the target language code generation template is
 // responsible for generating code that makes sense.
@@ -448,7 +482,7 @@ localsSpec : LOCALS^ ARG_ACTION<ActionAST> ;
 // @init {} section where declarations and code can be placed
 // to run before the rule is entered. The C target also has
 // an @declarations {} section, where local variables are declared
-// in order that the generated code is C89 compliant.
+// in order that the generated code is C89 copmliant.
 //
 /** Match stuff like @init {int i;} */
 ruleAction
@@ -486,13 +520,9 @@ lexerRule
 	paraphrases.pop();
 }
     : FRAGMENT?
-	  TOKEN_REF
-
-	  optionsSpec?
-
-	  COLON lexerRuleBlock SEMI
+	  TOKEN_REF COLON lexerRuleBlock SEMI
       -> ^( RULE<RuleAST> TOKEN_REF
-      		^(RULEMODIFIERS FRAGMENT)? optionsSpec? lexerRuleBlock
+      		^(RULEMODIFIERS FRAGMENT)? lexerRuleBlock
       	  )
 	;
 
@@ -527,7 +557,11 @@ lexerElement
 	int m = input.mark();
 }
 @after { paraphrases.pop(); }
-	:	lexerAtom
+	:	labeledLexerElement
+		(	ebnfSuffix	-> ^( ebnfSuffix ^(BLOCK<BlockAST>[$labeledLexerElement.start,"BLOCK"] ^(ALT<AltAST> labeledLexerElement) ) )
+		|				-> labeledLexerElement
+		)
+	|	lexerAtom
 		(	ebnfSuffix	-> ^( ebnfSuffix ^(BLOCK<BlockAST>[$lexerAtom.start,"BLOCK"] ^(ALT<AltAST> lexerAtom) ) )
 		|				-> lexerAtom
 		)
@@ -567,6 +601,14 @@ lexerElement
         reportError(re);
         recover(input,re);
 	}
+
+labeledLexerElement
+	:	id (ass=ASSIGN|ass=PLUS_ASSIGN)
+		(	lexerAtom	-> ^($ass id lexerAtom)
+		|	lexerBlock	-> ^($ass id lexerBlock)
+		)
+	;
+
 
 lexerBlock
 @after {

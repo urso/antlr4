@@ -252,7 +252,18 @@ public class SemanticContext: Hashable, CustomStringConvertible {
                 return self
             }
 
-            return operands.reduce(SemanticContext.NONE, SemanticContext.and)
+            if operands.isEmpty {
+                // all elements were true, so the AND context is true
+                return SemanticContext.NONE
+            }
+
+            var result = operands[0]
+            let length = operands.count
+            for i in 1..<length {
+                result = SemanticContext.and(result, operands[i])
+            }
+
+            return result
         }
 
         override
@@ -343,7 +354,18 @@ public class SemanticContext: Hashable, CustomStringConvertible {
                 return self
             }
 
-            return operands.reduce(nil, SemanticContext.or)
+            if operands.isEmpty {
+                // all elements were false, so the OR context is false
+                return nil
+            }
+
+            var result = operands[0]
+            let length = operands.count
+            for i in 1..<length {
+                result = SemanticContext.or(result, operands[i])
+            }
+
+            return result
         }
 
         override

@@ -91,7 +91,7 @@ public class SymbolCollector extends GrammarTreeVisitor {
 	}
 
 	@Override
-	public void discoverLexerRule(RuleAST rule, GrammarAST ID, List<GrammarAST> modifiers, GrammarAST options,
+	public void discoverLexerRule(RuleAST rule, GrammarAST ID, List<GrammarAST> modifiers,
 								  GrammarAST block)
 	{
 		currentRule = g.getRule(ID.getText());

@@ -144,7 +144,7 @@ public void discoverRule(RuleAST rule, GrammarAST ID, List<GrammarAST> modifiers
 						 List<GrammarAST> actions,
 						 GrammarAST block) { }
 public void finishRule(RuleAST rule, GrammarAST ID, GrammarAST block) { }
-public void discoverLexerRule(RuleAST rule, GrammarAST ID, List<GrammarAST> modifiers, GrammarAST options,
+public void discoverLexerRule(RuleAST rule, GrammarAST ID, List<GrammarAST> modifiers,
                               GrammarAST block) { }
 public void finishLexerRule(RuleAST rule, GrammarAST ID, GrammarAST block) { }
 public void ruleCatch(GrammarAST arg, ActionAST action) { }
@@ -260,6 +260,9 @@ protected void exitLexerElements(GrammarAST tree) { }
 
 protected void enterLexerElement(GrammarAST tree) { }
 protected void exitLexerElement(GrammarAST tree) { }
+
+protected void enterLabeledLexerElement(GrammarAST tree) { }
+protected void exitLabeledLexerElement(GrammarAST tree) { }
 
 protected void enterLexerBlock(GrammarAST tree) { }
 protected void exitLexerBlock(GrammarAST tree) { }
@@ -522,8 +525,7 @@ lexerRule
 	:	^(	RULE TOKEN_REF
 			{currentRuleName=$TOKEN_REF.text; currentRuleAST=$RULE;}
 			(^(RULEMODIFIERS m=FRAGMENT {mods.add($m);}))?
-			opts=optionsSpec*
-      		{discoverLexerRule((RuleAST)$RULE, $TOKEN_REF, mods, $opts.start, (GrammarAST)input.LT(1));}
+      		{discoverLexerRule((RuleAST)$RULE, $TOKEN_REF, mods, (GrammarAST)input.LT(1));}
       		lexerRuleBlock
       		{
       		finishLexerRule((RuleAST)$RULE, $TOKEN_REF, $lexerRuleBlock.start);
@@ -731,13 +733,24 @@ lexerElement
 @after {
 	exitLexerElement($start);
 }
-	:	lexerAtom
+	:	labeledLexerElement
+	|	lexerAtom
 	|	lexerSubrule
 	|   ACTION						{actionInAlt((ActionAST)$ACTION);}
 	|   SEMPRED						{sempredInAlt((PredAST)$SEMPRED);}
 	|   ^(ACTION elementOptions)	{actionInAlt((ActionAST)$ACTION);}
 	|   ^(SEMPRED elementOptions)	{sempredInAlt((PredAST)$SEMPRED);}
 	|	EPSILON
+	;
+
+labeledLexerElement
+@init {
+	enterLabeledLexerElement($start);
+}
+@after {
+	exitLabeledLexerElement($start);
+}
+    :   ^((ASSIGN|PLUS_ASSIGN) ID (lexerAtom|block))
 	;
 
 lexerBlock

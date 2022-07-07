@@ -196,8 +196,8 @@ class BasicState extends ATNState {
 }
 
 class RuleStartState extends ATNState {
-  RuleStopState? stopState;
-  bool isLeftRecursiveRule = false;
+  var stopState;
+  var isLeftRecursiveRule = false;
 
   RuleStartState(int ruleIndex) : super(ruleIndex);
 

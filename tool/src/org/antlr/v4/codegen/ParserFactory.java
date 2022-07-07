@@ -335,10 +335,8 @@ public class ParserFactory extends DefaultOutputModelFactory {
 	public AddToLabelList getAddToListOpIfListLabelPresent(LabeledOp op, GrammarAST label) {
 		AddToLabelList labelOp = null;
 		if ( label!=null && label.parent.getType()==ANTLRParser.PLUS_ASSIGN ) {
-			Target target = gen.getTarget();
-			String listLabel = target.getListLabel(label.getText());
-			String listRuntimeName = target.escapeIfNeeded(listLabel);
-			labelOp = new AddToLabelList(this, listRuntimeName, op.getLabels().get(0));
+			String listLabel = gen.getTarget().getListLabel(label.getText());
+			labelOp = new AddToLabelList(this, listLabel, op.getLabels().get(0));
 		}
 		return labelOp;
 	}

@@ -53,7 +53,7 @@ public class GrammarAST extends CommonTree {
     }
 
 	public GrammarAST[] getChildrenAsArray() {
-		return children.toArray(new GrammarAST[0]);
+		return children.toArray(new GrammarAST[children.size()]);
 	}
 
 	public List<GrammarAST> getNodesWithType(int ttype) {

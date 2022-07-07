@@ -24,7 +24,6 @@ import org.antlr.v4.runtime.atn.DecisionState;
 import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.runtime.atn.RuleStartState;
 import org.antlr.v4.runtime.atn.StarLoopEntryState;
-import org.antlr.v4.runtime.misc.IntegerList;
 import org.antlr.v4.runtime.misc.Interval;
 import org.antlr.v4.runtime.tree.Trees;
 
@@ -402,12 +401,12 @@ public class GrammarParserInterpreter extends ParserInterpreter {
 			}
 		}
 		else { // must've been a generated parser
-//			IntegerList serialized = ATNSerializer.getSerialized(originalParser.getATN(), g.getLanguage());
-//			ATN deserialized = new ATNDeserializer().deserialize(serialized.toArray());
+			char[] serializedAtn = ATNSerializer.getSerializedAsChars(originalParser.getATN());
+			ATN deserialized = new ATNDeserializer().deserialize(serializedAtn);
 			parser = new ParserInterpreter(originalParser.getGrammarFileName(),
 										   originalParser.getVocabulary(),
 										   Arrays.asList(originalParser.getRuleNames()),
-					                       originalParser.getATN(),
+										   deserialized,
 										   tokens);
 		}
 

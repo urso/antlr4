@@ -45,6 +45,8 @@ namespace Antlr4.Runtime.Atn
 
 		readonly SimState prevAccept = new SimState();
 
+		public static int match_calls = 0;
+
 		public LexerATNSimulator(ATN atn, DFA[] decisionToDFA,
 								 PredictionContextCache sharedContextCache)
 			: this(null, atn, decisionToDFA, sharedContextCache)
@@ -72,6 +74,7 @@ namespace Antlr4.Runtime.Atn
 
 		public int Match(ICharStream input, int mode)
 		{
+			match_calls++;
 			this.mode = mode;
 			int mark = input.Mark();
 			try

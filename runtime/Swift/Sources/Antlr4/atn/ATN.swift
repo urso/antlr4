@@ -139,7 +139,7 @@ public class ATN {
     /// number `stateNumber`
     /// 
     public func getExpectedTokens(_ stateNumber: Int, _ context: RuleContext) throws -> IntervalSet {
-        guard states.indices.contains(stateNumber) else {
+        if stateNumber < 0 || stateNumber >= states.count {
             throw ANTLRError.illegalArgument(msg: "Invalid state number.")
         }
 

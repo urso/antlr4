@@ -11,7 +11,7 @@ public protocol RecognizerProtocol {
     func getGrammarFileName() -> String
     func getParseInfo() -> ParseInfo?
     func getRuleNames() -> [String]
-    func getSerializedATN() -> [Int]
+    func getSerializedATN() -> String
     func getState() -> Int
     func getTokenType(_ tokenName: String) -> Int
     func getVocabulary() -> Vocabulary
@@ -23,7 +23,7 @@ open class Recognizer<ATNInterpreter: ATNSimulator>: RecognizerProtocol {
 
     public var _interp: ATNInterpreter!
 
-    private var _stateNumber = ATNState.INVALID_STATE_NUMBER
+    private var _stateNumber = -1
 
     open func getRuleNames() -> [String] {
         fatalError(#function + " must be overridden")
@@ -95,7 +95,7 @@ open class Recognizer<ATNInterpreter: ATNSimulator>: RecognizerProtocol {
     /// For interpreters, we don't know their serialized ATN despite having
     /// created the interpreter from it.
     /// 
-    open func getSerializedATN() -> [Int] {
+    open func getSerializedATN() -> String {
         fatalError("there is no serialized ATN")
     }
 

@@ -6,8 +6,8 @@ declare -i RESULT=0
 
 pushd runtime/JavaScript
 
-  echo "running jasmine tests..."
-  npm test
+  echo "running jest tests..."
+  yarn test
   RESULT+=$?
 
 popd
@@ -15,8 +15,7 @@ popd
 pushd runtime-testsuite
 
   echo "running maven tests..."
-  export MAVEN_OPTS="-Xmx8g"
-  mvn -Dtest=javascript.** test
+  mvn -q -Dtest=javascript.* test
   RESULT+=$?
 
 popd

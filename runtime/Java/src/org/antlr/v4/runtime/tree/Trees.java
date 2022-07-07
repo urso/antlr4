@@ -185,7 +185,6 @@ public class Trees {
 	}
 
 	/** @deprecated */
-  @Deprecated
 	public static List<ParseTree> descendants(ParseTree t) {
 		return getDescendants(t);
 	}

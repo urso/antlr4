@@ -71,6 +71,10 @@ public class LexerInterpreter: Lexer {
 
     override
     public func getVocabulary() -> Vocabulary {
-        return vocabulary ?? super.getVocabulary()
+        if vocabulary != nil {
+            return vocabulary!
+        }
+
+        return super.getVocabulary()
     }
 }

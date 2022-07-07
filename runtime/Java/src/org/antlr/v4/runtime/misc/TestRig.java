@@ -14,7 +14,6 @@ import java.lang.reflect.Method;
  *  @deprecated
  *  @since 4.5.1
  */
-@Deprecated
 public class TestRig {
 	public static void main(String[] args) {
 		try {

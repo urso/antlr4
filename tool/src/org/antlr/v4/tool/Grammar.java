@@ -29,7 +29,10 @@ import org.antlr.v4.runtime.atn.ATNDeserializer;
 import org.antlr.v4.runtime.atn.ATNSerializer;
 import org.antlr.v4.runtime.atn.SemanticContext;
 import org.antlr.v4.runtime.dfa.DFA;
-import org.antlr.v4.runtime.misc.*;
+import org.antlr.v4.runtime.misc.IntSet;
+import org.antlr.v4.runtime.misc.Interval;
+import org.antlr.v4.runtime.misc.IntervalSet;
+import org.antlr.v4.runtime.misc.Pair;
 import org.antlr.v4.tool.ast.ActionAST;
 import org.antlr.v4.tool.ast.GrammarAST;
 import org.antlr.v4.tool.ast.GrammarASTWithOptions;
@@ -71,8 +74,6 @@ public class Grammar implements AttributeResolver {
 	 */
 	public static final String INVALID_RULE_NAME = "<invalid>";
 
-	public static final String caseInsensitiveOptionName = "caseInsensitive";
-
 	public static final Set<String> parserOptions = new HashSet<String>();
 	static {
 		parserOptions.add("superClass");
@@ -82,21 +83,15 @@ public class Grammar implements AttributeResolver {
 		parserOptions.add("language");
 		parserOptions.add("accessLevel");
 		parserOptions.add("exportMacro");
-		parserOptions.add(caseInsensitiveOptionName);
 	}
 
 	public static final Set<String> lexerOptions = parserOptions;
 
-	public static final Set<String> lexerRuleOptions = new HashSet<>();
-	static {
-		lexerRuleOptions.add(caseInsensitiveOptionName);
-	}
+	public static final Set<String> ruleOptions = new HashSet<String>();
 
-	public static final Set<String> parseRuleOptions = new HashSet<>();
+	public static final Set<String> ParserBlockOptions = new HashSet<String>();
 
-	public static final Set<String> parserBlockOptions = new HashSet<String>();
-
-	public static final Set<String> lexerBlockOptions = new HashSet<String>();
+	public static final Set<String> LexerBlockOptions = new HashSet<String>();
 
 	/** Legal options for rule refs like id&lt;key=value&gt; */
 	public static final Set<String> ruleRefOptions = new HashSet<String>();
@@ -440,6 +435,7 @@ public class Grammar implements AttributeResolver {
 		if ( rules.get(r.name)!=null ) {
 			return false;
 		}
+
 		rules.put(r.name, r);
 		r.index = ruleNumber++;
 		indexToRule.add(r);
@@ -797,9 +793,8 @@ public class Grammar implements AttributeResolver {
 		}
 
 		for (Map.Entry<String, Integer> entry : stringLiteralToTypeMap.entrySet()) {
-			int value = entry.getValue();
-			if (value >= 0 && value < literalNames.length && literalNames[value] == null) {
-				literalNames[value] = entry.getKey();
+			if (entry.getValue() >= 0 && entry.getValue() < literalNames.length && literalNames[entry.getValue()] == null) {
+				literalNames[entry.getValue()] = entry.getKey();
 			}
 		}
 
@@ -891,7 +886,7 @@ public class Grammar implements AttributeResolver {
 	public int getMaxCharValue() {
 		return org.antlr.v4.runtime.Lexer.MAX_CHAR_VALUE;
 //		if ( generator!=null ) {
-//			return generator.getTarget().getMaxCharValue(generator);
+//			return generator.target.getMaxCharValue(generator);
 //		}
 //		else {
 //			return Label.MAX_CHAR_VALUE;
@@ -1170,10 +1165,6 @@ public class Grammar implements AttributeResolver {
         }
 	}
 
-	public String getLanguage() {
-		return getOptionString("language");
-	}
-
 	public String getOptionString(String key) { return ast.getOptionString(key); }
 
 	/** Given ^(TOKEN_REF ^(OPTIONS ^(ELEMENT_OPTIONS (= assoc right))))
@@ -1319,22 +1310,13 @@ public class Grammar implements AttributeResolver {
 			return implicitLexer.createLexerInterpreter(input);
 		}
 
+		char[] serializedAtn = ATNSerializer.getSerializedAsChars(atn);
+		ATN deserialized = new ATNDeserializer().deserialize(serializedAtn);
 		List<String> allChannels = new ArrayList<String>();
 		allChannels.add("DEFAULT_TOKEN_CHANNEL");
 		allChannels.add("HIDDEN");
 		allChannels.addAll(channelValueToNameList);
-
-		// must run ATN through serializer to set some state flags
-		IntegerList serialized = ATNSerializer.getSerialized(atn);
-		ATN deserializedATN = new ATNDeserializer().deserialize(serialized.toArray());
-		return new LexerInterpreter(
-				fileName,
-				getVocabulary(),
-				Arrays.asList(getRuleNames()),
-				allChannels,
-				((LexerGrammar)this).modes.keySet(),
-				deserializedATN,
-				input);
+		return new LexerInterpreter(fileName, getVocabulary(), Arrays.asList(getRuleNames()), allChannels, ((LexerGrammar)this).modes.keySet(), deserialized, input);
 	}
 
 	/** @since 4.5.1 */
@@ -1342,11 +1324,9 @@ public class Grammar implements AttributeResolver {
 		if (this.isLexer()) {
 			throw new IllegalStateException("A parser interpreter can only be created for a parser or combined grammar.");
 		}
-		// must run ATN through serializer to set some state flags
-		IntegerList serialized = ATNSerializer.getSerialized(atn);
-		ATN deserializedATN = new ATNDeserializer().deserialize(serialized.toArray());
-
-		return new GrammarParserInterpreter(this, deserializedATN, tokenStream);
+		char[] serializedAtn = ATNSerializer.getSerializedAsChars(atn);
+		ATN deserialized = new ATNDeserializer().deserialize(serializedAtn);
+		return new GrammarParserInterpreter(this, deserialized, tokenStream);
 	}
 
 	public ParserInterpreter createParserInterpreter(TokenStream tokenStream) {
@@ -1354,10 +1334,8 @@ public class Grammar implements AttributeResolver {
 			throw new IllegalStateException("A parser interpreter can only be created for a parser or combined grammar.");
 		}
 
-		// must run ATN through serializer to set some state flags
-		IntegerList serialized = ATNSerializer.getSerialized(atn);
-		ATN deserializedATN = new ATNDeserializer().deserialize(serialized.toArray());
-
-		return new ParserInterpreter(fileName, getVocabulary(), Arrays.asList(getRuleNames()), deserializedATN, tokenStream);
+		char[] serializedAtn = ATNSerializer.getSerializedAsChars(atn);
+		ATN deserialized = new ATNDeserializer().deserialize(serializedAtn);
+		return new ParserInterpreter(fileName, getVocabulary(), Arrays.asList(getRuleNames()), deserialized, tokenStream);
 	}
 }

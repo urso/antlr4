@@ -54,7 +54,8 @@ public class Trees {
     /// parse trees and extract data appropriately.
     /// 
     public static func toStringTree(_ t: Tree, _ recog: Parser?) -> String {
-        let ruleNamesList: [String]? = recog?.getRuleNames()
+        let ruleNames: [String]? = recog != nil ? recog!.getRuleNames() : nil
+        let ruleNamesList: Array<String>? = ruleNames ?? nil
         return toStringTree(t, ruleNamesList)
     }
 
@@ -80,14 +81,16 @@ public class Trees {
     }
 
     public static func getNodeText(_ t: Tree, _ recog: Parser?) -> String {
-        return getNodeText(t, recog?.getRuleNames())
+        let ruleNames: [String]? = recog != nil ? recog!.getRuleNames() : nil
+        let ruleNamesList: Array<String>? = ruleNames ?? nil
+        return getNodeText(t, ruleNamesList)
     }
 
     public static func getNodeText(_ t: Tree, _ ruleNames: Array<String>?) -> String {
-        if let ruleNames = ruleNames {
+        if ruleNames != nil {
             if let ruleNode = t as? RuleNode {
                 let ruleIndex: Int = ruleNode.getRuleContext().getRuleIndex()
-                let ruleName: String = ruleNames[ruleIndex]
+                let ruleName: String = ruleNames![ruleIndex]
                 let altNumber = (t as! RuleContext).getAltNumber()
                 if altNumber != ATN.INVALID_ALT_NUMBER  {
                     return "\(ruleName):\(altNumber)"
@@ -106,7 +109,8 @@ public class Trees {
         }
         // no recog for rule names
         let payload: AnyObject = t.getPayload()
-        if let token = payload as? Token {
+        if payload is Token {
+            let token = payload as! Token
             return token.getText()!
         }
         return "\(t.getPayload())"
@@ -180,7 +184,8 @@ public class Trees {
     }
 
     public static func descendants(_ t: ParseTree) -> Array<ParseTree> {
-        var nodes: Array<ParseTree> = [t]
+        var nodes: Array<ParseTree> = Array<ParseTree>()
+        nodes.append(t)
 
         let n: Int = t.getChildCount()
         for i in 0..<n {

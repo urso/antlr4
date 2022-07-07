@@ -8,13 +8,22 @@ package org.antlr.v4.codegen.target;
 
 import org.antlr.v4.codegen.CodeGenerator;
 import org.antlr.v4.codegen.Target;
+import org.antlr.v4.codegen.UnicodeEscapes;
+import org.antlr.v4.tool.ast.GrammarAST;
 import org.stringtemplate.v4.STGroup;
 import org.stringtemplate.v4.StringRenderer;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Locale;
+import java.util.Set;
 
+/**
+ *
+ * @author Eric Vergnaud
+ */
 public class Python2Target extends Target {
-	protected static final HashSet<String> reservedWords = new HashSet<>(Arrays.asList(
+	protected static final String[] python2Keywords = {
 		"abs", "all", "and", "any", "apply", "as", "assert",
 		"bin", "bool", "break", "buffer", "bytearray",
 		"callable", "chr", "class", "classmethod", "coerce", "compile", "complex", "continue",
@@ -39,41 +48,19 @@ public class Python2Target extends Target {
 		"yield",
 		"zip",
 		"__import__",
-		"True", "False", "None",
+		"True", "False", "None"
+	};
 
-		// misc
-		"rule", "parserRule"
-	));
-
-	protected static final Map<Character, String> targetCharValueEscape;
-	static {
-		// https://docs.python.org/3/reference/lexical_analysis.html#string-and-bytes-literals
-		HashMap<Character, String> map = new HashMap<>();
-		addEscapedChar(map, '\\');
-		addEscapedChar(map, '\'');
-		addEscapedChar(map, '\"');
-		addEscapedChar(map, (char)0x0007, 'a');
-		addEscapedChar(map, (char)0x0008, 'b');
-		addEscapedChar(map, '\f', 'f');
-		addEscapedChar(map, '\n', 'n');
-		addEscapedChar(map, '\r', 'r');
-		addEscapedChar(map, '\t', 't');
-		addEscapedChar(map, (char)0x000B, 'v');
-		targetCharValueEscape = map;
-	}
+	/** Avoid grammar symbols in this set to prevent conflicts in gen'd code. */
+	protected final Set<String> badWords = new HashSet<String>();
 
 	public Python2Target(CodeGenerator gen) {
-		super(gen);
+		super(gen, "Python2");
 	}
 
 	@Override
-	public Map<Character, String> getTargetCharValueEscape() {
-		return targetCharValueEscape;
-	}
-
-	@Override
-	protected Set<String> getReservedWords() {
-		return reservedWords;
+	protected boolean visibleGrammarSymbolCausesIssueInGeneratedCode(GrammarAST idNode) {
+		return getBadWords().contains(idNode.getText());
 	}
 
 	@Override
@@ -105,5 +92,28 @@ public class Python2Target extends Target {
 	public boolean supportsOverloadedMethods() {
 		return false;
 	}
-}
 
+	@Override
+	public String getVersion() {
+		return "4.9.3";
+	}
+
+	public Set<String> getBadWords() {
+		if (badWords.isEmpty()) {
+			addBadWords();
+		}
+
+		return badWords;
+	}
+
+	protected void addBadWords() {
+		badWords.addAll(Arrays.asList(python2Keywords));
+		badWords.add("rule");
+		badWords.add("parserRule");
+	}
+
+	@Override
+	protected void appendUnicodeEscapedCodePoint(int codePoint, StringBuilder sb) {
+		UnicodeEscapes.appendPythonStyleEscapedCodePoint(codePoint, sb);
+	}
+}

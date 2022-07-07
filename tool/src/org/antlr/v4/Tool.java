@@ -24,6 +24,7 @@ import org.antlr.v4.parse.GrammarASTAdaptor;
 import org.antlr.v4.parse.GrammarTreeVisitor;
 import org.antlr.v4.parse.ToolANTLRLexer;
 import org.antlr.v4.parse.ToolANTLRParser;
+import org.antlr.v4.parse.v3TreeGrammarException;
 import org.antlr.v4.runtime.RuntimeMetaData;
 import org.antlr.v4.runtime.misc.LogManager;
 import org.antlr.v4.runtime.misc.IntegerList;
@@ -56,7 +57,12 @@ import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.reflect.Field;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Tool {
@@ -375,30 +381,23 @@ public class Tool {
 		SemanticPipeline sem = new SemanticPipeline(g);
 		sem.process();
 
-		if ( errMgr.getNumErrors()>prevErrors ) return;
-
-		CodeGenerator codeGenerator = CodeGenerator.create(g);
-		if (codeGenerator == null) {
+		String language = g.getOptionString("language");
+		if ( !CodeGenerator.targetExists(language) ) {
+			errMgr.toolError(ErrorType.CANNOT_CREATE_TARGET_GENERATOR, language);
 			return;
 		}
 
+		if ( errMgr.getNumErrors()>prevErrors ) return;
+
 		// BUILD ATN FROM AST
 		ATNFactory factory;
-		if ( g.isLexer() ) factory = new LexerATNFactory((LexerGrammar)g, codeGenerator);
+		if ( g.isLexer() ) factory = new LexerATNFactory((LexerGrammar)g);
 		else factory = new ParserATNFactory(g);
 		g.atn = factory.createATN();
 
 		if ( generate_ATN_dot ) generateATNs(g);
 
-		if (gencode && g.tool.getNumErrors()==0 ) {
-			String interpFile = generateInterpreterData(g);
-			try (Writer fw = getOutputFileWriter(g, g.name + ".interp")) {
-				fw.write(interpFile);
-			}
-			catch (IOException ioe) {
-				errMgr.toolError(ErrorType.CANNOT_WRITE_FILE, ioe);
-			}
-		}
+		if (gencode && g.tool.getNumErrors()==0 ) generateInterpreterData(g);
 
 		// PERFORM GRAMMAR ANALYSIS ON ATN: BUILD DECISION DFAs
 		AnalysisPipeline anal = new AnalysisPipeline(g);
@@ -410,7 +409,7 @@ public class Tool {
 
 		// GENERATE CODE
 		if ( gencode ) {
-			CodeGenPipeline gen = new CodeGenPipeline(g, codeGenerator);
+			CodeGenPipeline gen = new CodeGenPipeline(g);
 			gen.process();
 		}
 	}
@@ -658,15 +657,20 @@ public class Tool {
 			lexer.tokens = tokens;
 			ToolANTLRParser p = new ToolANTLRParser(tokens, this);
 			p.setTreeAdaptor(adaptor);
-			ParserRuleReturnScope r = p.grammarSpec();
-			GrammarAST root = (GrammarAST) r.getTree();
-			if (root instanceof GrammarRootAST) {
-				((GrammarRootAST) root).hasErrors = lexer.getNumberOfSyntaxErrors() > 0 || p.getNumberOfSyntaxErrors() > 0;
-				assert ((GrammarRootAST) root).tokenStream == tokens;
-				if (grammarOptions != null) {
-					((GrammarRootAST) root).cmdLineOptions = grammarOptions;
+			try {
+				ParserRuleReturnScope r = p.grammarSpec();
+				GrammarAST root = (GrammarAST)r.getTree();
+				if ( root instanceof GrammarRootAST) {
+					((GrammarRootAST)root).hasErrors = lexer.getNumberOfSyntaxErrors()>0 || p.getNumberOfSyntaxErrors()>0;
+					assert ((GrammarRootAST)root).tokenStream == tokens;
+					if ( grammarOptions!=null ) {
+						((GrammarRootAST)root).cmdLineOptions = grammarOptions;
+					}
+					return ((GrammarRootAST)root);
 				}
-				return ((GrammarRootAST) root);
+			}
+			catch (v3TreeGrammarException e) {
+				errMgr.grammarError(ErrorType.V3_TREE_GRAMMAR, fileName, e.location);
 			}
 			return null;
 		}
@@ -698,7 +702,7 @@ public class Tool {
 		}
 	}
 
-	public static String generateInterpreterData(Grammar g) {
+	private void generateInterpreterData(Grammar g) {
 		StringBuilder content = new StringBuilder();
 
 		content.append("token literal names:\n");
@@ -739,14 +743,21 @@ public class Tool {
 		content.append("\n");
 
 		IntegerList serializedATN = ATNSerializer.getSerialized(g.atn);
-		// Uncomment if you'd like to write out histogram info on the numbers of
-		// each integer value:
-		//Utils.writeSerializedATNIntegerHistogram(g.name+"-histo.csv", serializedATN);
-
 		content.append("atn:\n");
 		content.append(serializedATN.toString());
 
-		return content.toString();
+		try {
+			Writer fw = getOutputFileWriter(g, g.name + ".interp");
+			try {
+				fw.write(content.toString());
+			}
+			finally {
+				fw.close();
+			}
+		}
+		catch (IOException ioe) {
+			errMgr.toolError(ErrorType.CANNOT_WRITE_FILE, ioe);
+		}
 	}
 
 	/** This method is used by all code generators to create new output

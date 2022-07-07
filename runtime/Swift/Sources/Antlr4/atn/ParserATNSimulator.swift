@@ -646,7 +646,7 @@ open class ParserATNSimulator: ATNSimulator {
         var previous = s0
         try input.seek(startIndex)
         var t = try input.LA(1)
-        var predictedAlt = ATN.INVALID_ALT_NUMBER
+        var predictedAlt = 0
         while true {
             // while more work
             if let computeReach = try computeReachSet(previous, t, fullCtx) {
@@ -1132,7 +1132,9 @@ open class ParserATNSimulator: ATNSimulator {
         _ altToPred: [SemanticContext?]) -> [DFAState.PredPrediction]? {
             var pairs = [DFAState.PredPrediction]()
             var containsPredicate = false
-            for (i, pred) in altToPred.enumerated().dropFirst() {
+            let length = altToPred.count
+            for i in 1..<length {
+                let pred = altToPred[i]
 
                 // unpredicated is indicated by SemanticContext.NONE
                 assert(pred != nil, "Expected: pred!=null")

@@ -12,13 +12,16 @@ import java.util.List;
 
 /** This interface describes everything that a runtime test
  *  descriptor can specify. Most testing descriptors will
- *  subclass {@link UniversalRuntimeTestDescriptor} rather than
+ *  subclass {@link BaseRuntimeTestDescriptor} rather than
  *  implement this directly.  The {@link BaseRuntimeTest}
  *  class pulls data from descriptors to execute tests.
  *
  *  @since 4.6
  */
 public interface RuntimeTestDescriptor {
+	/** The name of this test such as TokenAndRuleContextString (see
+	 *  {@link org.antlr.v4.test.runtime.descriptors.ParseTreesDescriptors.TokenAndRuleContextString})
+	 */
 	String getTestName();
 
 	/** A type in {"Lexer", "Parser", "CompositeLexer", "CompositeParser"} */
@@ -37,7 +40,7 @@ public interface RuntimeTestDescriptor {
 	String getANTLRToolErrors();
 
 	/** The rule at which parsing should start */
-	String getStartRule();
+	String getStartRule(); // TODO: alter tests to use same default start rule?
 
 	/** For lexical tests, dump the DFA of the default lexer mode to stdout */
 	boolean showDFA();

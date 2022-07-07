@@ -173,18 +173,4 @@ public class VocabularyImpl implements Vocabulary {
 
 		return Integer.toString(tokenType);
 	}
-
-	// Because this is an actual implementation object, we can provide access methods for vocabulary symbols
-
-	public String[] getLiteralNames() {
-		return literalNames;
-	}
-
-	public String[] getSymbolicNames() {
-		return symbolicNames;
-	}
-
-	public String[] getDisplayNames() {
-		return displayNames;
-	}
 }

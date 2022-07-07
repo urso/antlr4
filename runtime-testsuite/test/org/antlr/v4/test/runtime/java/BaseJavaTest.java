@@ -56,9 +56,11 @@ import java.util.List;
 import java.util.Set;
 
 import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
 import static junit.framework.TestCase.assertNotNull;
 import static junit.framework.TestCase.assertTrue;
 import static org.antlr.v4.test.runtime.BaseRuntimeTest.writeFile;
+import static org.junit.Assert.assertArrayEquals;
 
 public class BaseJavaTest extends BaseRuntimeTestSupport implements RuntimeTestSupport {
 
@@ -125,6 +127,8 @@ public class BaseJavaTest extends BaseRuntimeTestSupport implements RuntimeTestS
 		}
 
 		JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+//		DiagnosticCollector<JavaFileObject> diagnostics =
+//			new DiagnosticCollector<JavaFileObject>();
 
 		StandardJavaFileManager fileManager =
 			compiler.getStandardFileManager(null, null, null);
@@ -133,7 +137,7 @@ public class BaseJavaTest extends BaseRuntimeTestSupport implements RuntimeTestS
 			fileManager.getJavaFileObjectsFromFiles(files);
 
 		Iterable<String> compileOptions =
-			Arrays.asList("-g", "-source", "1.8", "-target", "1.8", "-implicit:class", "-Xlint:-options", "-d", getTempDirPath(), "-cp", getTempDirPath() + PATH_SEP + CLASSPATH);
+			Arrays.asList("-g", "-source", "1.6", "-target", "1.6", "-implicit:class", "-Xlint:-options", "-d", getTempDirPath(), "-cp", getTempDirPath() + PATH_SEP + CLASSPATH);
 
 		JavaCompiler.CompilationTask task =
 			compiler.getTask(null, fileManager, null, compileOptions, null,
@@ -185,7 +189,7 @@ public class BaseJavaTest extends BaseRuntimeTestSupport implements RuntimeTestS
 	public ParseTree execStartRule(String startRuleName, Parser parser)
 		throws IllegalAccessException, InvocationTargetException,
 		NoSuchMethodException {
-		Method startRule;
+		Method startRule = null;
 		Object[] args = null;
 		try {
 			startRule = parser.getClass().getMethod(startRuleName);
@@ -461,7 +465,7 @@ public class BaseJavaTest extends BaseRuntimeTestSupport implements RuntimeTestS
             AnalysisPipeline anal = new AnalysisPipeline(g);
             anal.process();
 
-			CodeGenerator gen = CodeGenerator.create(g);
+			CodeGenerator gen = new CodeGenerator(g);
 			ST outputFileST = gen.generateParser(false);
 			String output = outputFileST.render();
 			//System.out.println(output);

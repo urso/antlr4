@@ -1,5 +1,9 @@
 lexer grammar XPathLexer;
 
+@header {
+using System; 
+}
+
 tokens { TokenRef, RuleRef }
 
 /*

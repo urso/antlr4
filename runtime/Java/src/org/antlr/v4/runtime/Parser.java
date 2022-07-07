@@ -80,14 +80,13 @@ public abstract class Parser extends Recognizer<Token, ParserATNSimulator> {
 	}
 
 	/**
-	 * This field holds the deserialized {@link ATN} with bypass alternatives, created
-	 * lazily upon first demand. In 4.10 I changed from map<serializedATNstring, ATN>
-	 * since we only need one per parser object and also it complicates other targets
-	 * that don't use ATN strings.
+	 * This field maps from the serialized ATN string to the deserialized {@link ATN} with
+	 * bypass alternatives.
 	 *
 	 * @see ATNDeserializationOptions#isGenerateRuleBypassTransitions()
 	 */
-	private ATN bypassAltsAtnCache;
+	private static final Map<String, ATN> bypassAltsAtnCache =
+		new WeakHashMap<String, ATN>();
 
 	/**
 	 * The error handling strategy for the parser. The default value is a new
@@ -446,14 +445,16 @@ public abstract class Parser extends Recognizer<Token, ParserATNSimulator> {
 			throw new UnsupportedOperationException("The current parser does not support an ATN with bypass alternatives.");
 		}
 
-		synchronized (this) {
-			if ( bypassAltsAtnCache!=null ) {
-				return bypassAltsAtnCache;
+		synchronized (bypassAltsAtnCache) {
+			ATN result = bypassAltsAtnCache.get(serializedAtn);
+			if (result == null) {
+				ATNDeserializationOptions deserializationOptions = new ATNDeserializationOptions();
+				deserializationOptions.setGenerateRuleBypassTransitions(true);
+				result = new ATNDeserializer(deserializationOptions).deserialize(serializedAtn.toCharArray());
+				bypassAltsAtnCache.put(serializedAtn, result);
 			}
-			ATNDeserializationOptions deserializationOptions = new ATNDeserializationOptions();
-			deserializationOptions.setGenerateRuleBypassTransitions(true);
-			bypassAltsAtnCache = new ATNDeserializer(deserializationOptions).deserialize(serializedAtn.toCharArray());
-			return bypassAltsAtnCache;
+
+			return result;
 		}
 	}
 
