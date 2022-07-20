@@ -123,9 +123,10 @@ public class ATNState: Hashable, CustomStringConvertible {
     public internal(set) final var nextTokenWithinRule: IntervalSet?
 
 
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(stateNumber)
+    public var hashValue: Int {
+        return stateNumber
     }
+
 
     public func isNonGreedyExitState() -> Bool {
         return false

@@ -76,7 +76,7 @@ public class ParserInterpreter: Parser {
         self.vocabulary = vocabulary
         self.decisionToDFA = [DFA]()
         for i in 0 ..< atn.getNumberOfDecisions() {
-            decisionToDFA.append(DFA(atn.getDecisionState(i)!, i))
+            decisionToDFA[i] = DFA(atn.getDecisionState(i)!, i)
         }
 
         // identify the ATN states where pushNewRecursionContext() must be called

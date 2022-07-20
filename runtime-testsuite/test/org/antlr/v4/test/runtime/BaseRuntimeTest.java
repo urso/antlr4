@@ -11,7 +11,9 @@ import org.antlr.v4.runtime.misc.Pair;
 import org.antlr.v4.runtime.misc.Utils;
 import org.antlr.v4.tool.ANTLRMessage;
 import org.antlr.v4.tool.DefaultToolListener;
-import org.junit.*;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
@@ -42,92 +44,32 @@ import static org.junit.Assume.assumeFalse;
  *  @since 4.6.
  */
 public abstract class BaseRuntimeTest {
-
 	public final static String[] Targets = {
 		"Cpp",
-		"CSharp",
-		"Dart",
-		"Go",
 		"Java",
-		"Node",
-		"PHP",
+		"Go",
+		"CSharp",
 		"Python2", "Python3",
-		"Swift"
+		"Node", "Safari", "Firefox", "Explorer", "Chrome"
+	};
+	public final static String[] JavaScriptTargets = {
+		"Node", "Safari", "Firefox", "Explorer", "Chrome"
 	};
 
-	@BeforeClass
-	public static void startHeartbeatToAvoidTimeout() {
-		if(requiresHeartbeat())
-			startHeartbeat();
-	}
-
-	private static boolean requiresHeartbeat() {
-		return isTravisCI()
-				|| isAppVeyorCI()
-				|| (isCPP() && isRecursion()) 
-				|| (isCircleCI() && isGo())
-				|| (isCircleCI() && isDotNet() && isRecursion());
-	}
-
-	@AfterClass
-	public static void stopHeartbeat() {
-		heartbeat = false;
-	}
-
-	private static boolean isRecursion() {
-		String s = System.getenv("GROUP");
-		return "recursion".equalsIgnoreCase(s);
-	}
-
-	private static boolean isGo() {
-		String s = System.getenv("TARGET");
-		return "go".equalsIgnoreCase(s);
-	}
-
-	private static boolean isCPP() {
-		String s = System.getenv("TARGET");
-		return "cpp".equalsIgnoreCase(s);
-	}
-
-	private static boolean isDotNet() {
-		String s = System.getenv("TARGET");
-		return "dotnet".equalsIgnoreCase(s);
-	}
-
-	private static boolean isCircleCI() {
-		// see https://circleci.com/docs/2.0/env-vars/#built-in-environment-variables
-		String s = System.getenv("CIRCLECI");
-		return "true".equalsIgnoreCase(s);
-	}
-
-	private static boolean isAppVeyorCI() {
-		// see https://www.appveyor.com/docs/environment-variables/
-		String s = System.getenv("APPVEYOR");
-		return "true".equalsIgnoreCase(s);
-	}
-
-	private static boolean isTravisCI() {
-		// see https://docs.travis-ci.com/user/environment-variables/#default-environment-variables
-		String s = System.getenv("TRAVIS");
-		return "true".equalsIgnoreCase(s);
-	}
-
-	static boolean heartbeat = false;
-
-	private static void startHeartbeat() {
-		// Add heartbeat thread to gen minimal output for travis, appveyor to avoid timeout.
+	static {
+		// Add heartbeat thread to gen minimal output for travis, appveyor to
+		// avoid timeout.
 		Thread t = new Thread("heartbeat") {
 			@Override
 			public void run() {
-				heartbeat = true;
-				while (heartbeat) {
+				while (true) {
+					System.out.print('.');
 					try {
-						//noinspection BusyWait
-						Thread.sleep(10000);
-					} catch (Exception e) {
+						Thread.sleep(5000);
+					}
+					catch (Exception e) {
 						e.printStackTrace();
 					}
-					System.out.print('.');
 				}
 			}
 		};
@@ -145,19 +87,17 @@ public abstract class BaseRuntimeTest {
 		this.delegate = delegate;
 	}
 
+	public static void mkdir(String dir) {
+		File f = new File(dir);
+		f.mkdirs();
+	}
+
 	@Before
 	public void setUp() throws Exception {
 		// From http://junit.sourceforge.net/javadoc/org/junit/Assume.html
 		// "The default JUnit runner treats tests with failing assumptions as ignored"
-		assumeFalse(checkIgnored());
+		assumeFalse(descriptor.ignore(descriptor.getTarget()));
 		delegate.testSetUp();
-	}
-
-	public boolean checkIgnored() {
-		boolean ignored = !TestContext.isSupportedTarget(descriptor.getTarget()) || descriptor.ignore(descriptor.getTarget());
-		if(ignored)
-			System.out.println("Ignore " + descriptor);
-		return ignored;
 	}
 
 	@Rule
@@ -171,24 +111,21 @@ public abstract class BaseRuntimeTest {
 
 	@Test
 	public void testOne() throws Exception {
-		// System.out.println(descriptor.getTestName());
 		// System.out.println(delegate.getTmpDir());
-		if (descriptor.ignore(descriptor.getTarget()) ) {
-			System.out.println("Ignore " + descriptor);
+		if ( descriptor.ignore(descriptor.getTarget()) ) {
+			System.out.printf("Ignore "+descriptor);
 			return;
 		}
-		delegate.beforeTest(descriptor);
-		if (descriptor.getTestType().contains("Parser") ) {
+		if ( descriptor.getTestType().contains("Parser") ) {
 			testParser(descriptor);
 		}
 		else {
 			testLexer(descriptor);
 		}
-		delegate.afterTest(descriptor);
 	}
 
 	public void testParser(RuntimeTestDescriptor descriptor) throws Exception {
-		RuntimeTestUtils.mkdir(delegate.getTempParserDirPath());
+		mkdir(delegate.getTmpDir());
 
 		Pair<String, String> pair = descriptor.getGrammar();
 
@@ -205,7 +142,7 @@ public abstract class BaseRuntimeTest {
 				g.registerRenderer(String.class, new StringRenderer());
 				g.importTemplates(targetTemplates);
 				ST grammarST = new ST(g, spair.b);
-				writeFile(delegate.getTempParserDirPath(), spair.a+".g4", grammarST.render());
+				writeFile(delegate.getTmpDir(), spair.a+".g4", grammarST.render());
 			}
 		}
 
@@ -230,7 +167,7 @@ public abstract class BaseRuntimeTest {
 	}
 
 	public void testLexer(RuntimeTestDescriptor descriptor) throws Exception {
-		RuntimeTestUtils.mkdir(delegate.getTempParserDirPath());
+		mkdir(delegate.getTmpDir());
 
 		Pair<String, String> pair = descriptor.getGrammar();
 
@@ -247,7 +184,7 @@ public abstract class BaseRuntimeTest {
 				g.registerRenderer(String.class, new StringRenderer());
 				g.importTemplates(targetTemplates);
 				ST grammarST = new ST(g, spair.b);
-				writeFile(delegate.getTempParserDirPath(), spair.a+".g4", grammarST.render());
+				writeFile(delegate.getTmpDir(), spair.a+".g4", grammarST.render());
 			}
 		}
 
@@ -271,7 +208,7 @@ public abstract class BaseRuntimeTest {
 	                                       boolean defaultListener,
 	                                       String... extraOptions)
 	{
-		RuntimeTestUtils.mkdir(workdir);
+		mkdir(workdir);
 		writeFile(workdir, grammarFileName, grammarStr);
 		return antlrOnString(workdir, targetName, grammarFileName, defaultListener, extraOptions);
 	}
@@ -336,8 +273,6 @@ public abstract class BaseRuntimeTest {
 	// ---- support ----
 
 	public static RuntimeTestDescriptor[] getRuntimeTestDescriptors(Class<?> clazz, String targetName) {
-		if(!TestContext.isSupportedTarget(targetName))
-			return new RuntimeTestDescriptor[0];
 		Class<?>[] nestedClasses = clazz.getClasses();
 		List<RuntimeTestDescriptor> descriptors = new ArrayList<RuntimeTestDescriptor>();
 		for (Class<?> nestedClass : nestedClasses) {
@@ -345,10 +280,8 @@ public abstract class BaseRuntimeTest {
 			if ( RuntimeTestDescriptor.class.isAssignableFrom(nestedClass) && !Modifier.isAbstract(modifiers) ) {
 				try {
 					RuntimeTestDescriptor d = (RuntimeTestDescriptor) nestedClass.newInstance();
-					if(!d.ignore(targetName)) {
-						d.setTarget(targetName);
-						descriptors.add(d);
-					}
+					d.setTarget(targetName);
+					descriptors.add(d);
 				} catch (Exception e) {
 					e.printStackTrace(System.err);
 				}
@@ -367,16 +300,6 @@ public abstract class BaseRuntimeTest {
 		}
 	}
 
-	public static String readFile(String dir, String fileName) {
-		try {
-			return String.copyValueOf(Utils.readFile(dir+"/"+fileName, "UTF-8"));
-		}
-		catch (IOException ioe) {
-			System.err.println("can't read file");
-			ioe.printStackTrace(System.err);
-		}
-		return null;
-	}
 
 	protected static void assertCorrectOutput(RuntimeTestDescriptor descriptor, RuntimeTestSupport delegate, String actualOutput) {
 		String actualParseErrors = delegate.getParseErrors();

@@ -191,7 +191,8 @@ public class Trees {
         for i in 0..<n {
 
             //nodes.addAll(descendants(t.getChild(i)));
-            if let child = t.getChild(i) {
+            let child = t.getChild(i)
+            if child != nil {
                 nodes.concat(descendants(child as! ParseTree))
             }
 
@@ -211,12 +212,14 @@ public class Trees {
 
         for i in 0..<n {
             //TODO t.getChild(i) nil
+            let child: ParseTree? = t.getChild(i) as? ParseTree
             //Added by janyou
-            guard let child = t.getChild(i) as? ParseTree else {
+            if child == nil {
                 return nil
             }
-            if let r = getRootOfSubtreeEnclosingRegion(child, startTokenIndex, stopTokenIndex) {
-                return r
+            let r: ParserRuleContext? = getRootOfSubtreeEnclosingRegion(child!, startTokenIndex, stopTokenIndex)
+            if r != nil {
+                return r!
             }
         }
         if let r = t as? ParserRuleContext {

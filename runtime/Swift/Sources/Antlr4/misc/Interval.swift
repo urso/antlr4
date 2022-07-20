@@ -62,12 +62,13 @@ public class Interval: Hashable {
     }
 
 
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(a)
-        hasher.combine(b)
+    public var hashValue: Int {
+        var hash: Int = 23
+        hash = hash * 31 + a
+        hash = hash * 31 + b
+        return hash
     }
-
-    ///
+    /// 
     /// Does this start completely before other? Disjoint
     /// 
     public func startsBeforeDisjoint(_ other: Interval) -> Bool {

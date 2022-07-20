@@ -67,7 +67,7 @@ public class RuntimeMetaData {
 	 * omitted.</li>
 	 * </ul>
 	 */
-	public static final String VERSION = "4.9.3";
+	public static final String VERSION = "4.7.2";
 
 	/**
 	 * Gets the currently executing version of the ANTLR 4 runtime library.
@@ -157,11 +157,11 @@ public class RuntimeMetaData {
 			!getMajorMinorVersion(runtimeVersion).equals(getMajorMinorVersion(compileTimeVersion));
 
 		if ( runtimeConflictsWithGeneratingTool ) {
-			System.err.printf("ANTLR Tool version %s used for code generation does not match the current runtime version %s%n",
+			System.err.printf("ANTLR Tool version %s used for code generation does not match the current runtime version %s",
 							  generatingToolVersion, runtimeVersion);
 		}
 		if ( runtimeConflictsWithCompileTimeTool ) {
-			System.err.printf("ANTLR Runtime version %s used for parser compilation does not match the current runtime version %s%n",
+			System.err.printf("ANTLR Runtime version %s used for parser compilation does not match the current runtime version %s",
 							  compileTimeVersion, runtimeVersion);
 		}
 	}

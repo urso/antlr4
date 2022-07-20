@@ -48,12 +48,12 @@ javascriptTypeInitMap ::= [
 
 ParserFile(file, parser, namedActions, contextSuperClass) ::= <<
 <fileHeader(file.grammarFileName, file.ANTLRVersion)>
-import antlr4 from 'antlr4';
+var antlr4 = require('antlr4/index');
 <if(file.genListener)>
-import <file.grammarName>Listener from './<file.grammarName>Listener.js';
+var <file.grammarName>Listener = require('./<file.grammarName>Listener').<file.grammarName>Listener;
 <endif>
 <if(file.genVisitor)>
-import <file.grammarName>Visitor from './<file.grammarName>Visitor.js';
+var <file.grammarName>Visitor = require('./<file.grammarName>Visitor').<file.grammarName>Visitor;
 <endif>
 
 <namedActions.header>
@@ -62,43 +62,55 @@ import <file.grammarName>Visitor from './<file.grammarName>Visitor.js';
 
 ListenerFile(file, header, namedActions) ::= <<
 <fileHeader(file.grammarFileName, file.ANTLRVersion)>
-import antlr4 from 'antlr4';
+var antlr4 = require('antlr4/index');
 
 // This class defines a complete listener for a parse tree produced by <file.parserName>.
-export default class <file.grammarName>Listener extends antlr4.tree.ParseTreeListener {
+function <file.grammarName>Listener() {
+	antlr4.tree.ParseTreeListener.call(this);
+	return this;
+}
+
+<file.grammarName>Listener.prototype = Object.create(antlr4.tree.ParseTreeListener.prototype);
+<file.grammarName>Listener.prototype.constructor = <file.grammarName>Listener;
 
 <file.listenerNames:{lname |
-	// Enter a parse tree produced by <file.parserName>#<lname>.
-	enter<lname; format="cap">(ctx) {
-	\}
+// Enter a parse tree produced by <file.parserName>#<lname>.
+<file.grammarName>Listener.prototype.enter<lname; format="cap"> = function(ctx) {
+\};
 
-	// Exit a parse tree produced by <file.parserName>#<lname>.
-	exit<lname; format="cap">(ctx) {
-	\}
+// Exit a parse tree produced by <file.parserName>#<lname>.
+<file.grammarName>Listener.prototype.exit<lname; format="cap"> = function(ctx) {
+\};
 
 }; separator="\n">
 
-}
+exports.<file.grammarName>Listener = <file.grammarName>Listener;
 >>
 
 
 VisitorFile(file, header, namedActions) ::= <<
 <fileHeader(file.grammarFileName, file.ANTLRVersion)>
-import antlr4 from 'antlr4';
+var antlr4 = require('antlr4/index');
 
 // This class defines a complete generic visitor for a parse tree produced by <file.parserName>.
 
-export default class <file.grammarName>Visitor extends antlr4.tree.ParseTreeVisitor {
+function <file.grammarName>Visitor() {
+	antlr4.tree.ParseTreeVisitor.call(this);
+	return this;
+}
+
+<file.grammarName>Visitor.prototype = Object.create(antlr4.tree.ParseTreeVisitor.prototype);
+<file.grammarName>Visitor.prototype.constructor = <file.grammarName>Visitor;
 
 <file.visitorNames:{lname |
-	// Visit a parse tree produced by <file.parserName>#<lname>.
-	visit<lname; format="cap">(ctx) {
-	  return this.visitChildren(ctx);
-	\}
+// Visit a parse tree produced by <file.parserName>#<lname>.
+<file.grammarName>Visitor.prototype.visit<lname; format="cap"> = function(ctx) {
+  return this.visitChildren(ctx);
+\};
 
 }; separator="\n">
 
-}
+exports.<file.grammarName>Visitor = <file.grammarName>Visitor;
 >>
 
 
@@ -109,74 +121,68 @@ fileHeader(grammarFileName, ANTLRVersion) ::= <<
 
 Parser(parser, funcs, atn, sempredFuncs, superClass) ::= <<
 <if(superClass)>
-import <superClass> from './<superClass>.js';
+var <superClass> = require('./<superClass>').<superClass>;
 <endif>
+
+var grammarFileName = "<parser.grammarFileName; format="java-escape">";
 
 <atn>
 
-const atn = new antlr4.atn.ATNDeserializer().deserialize(serializedATN);
+var atn = new antlr4.atn.ATNDeserializer().deserialize(serializedATN);
 
-const decisionsToDFA = atn.decisionToState.map( (ds, index) => new antlr4.dfa.DFA(ds, index) );
+var decisionsToDFA = atn.decisionToState.map( function(ds, index) { return new antlr4.dfa.DFA(ds, index); });
 
-const sharedContextCache = new antlr4.PredictionContextCache();
+var sharedContextCache = new antlr4.PredictionContextCache();
 
-export default class <parser.name> extends <superClass; null="antlr4.Parser"> {
+var literalNames = [ <parser.literalNames:{t | <t>}; null="null", separator=", ", wrap, anchor> ];
 
-    static grammarFileName = "<parser.grammarFileName; format="java-escape">";
-    static literalNames = [ <parser.literalNames:{t | <t>}; null="null", separator=", ", wrap, anchor> ];
-    static symbolicNames = [ <parser.symbolicNames:{t | <t>}; null="null", separator=", ", wrap, anchor> ];
-    static ruleNames = [ <parser.ruleNames:{r | "<r>"}; separator=", ", wrap, anchor> ];
+var symbolicNames = [ <parser.symbolicNames:{t | <t>}; null="null", separator=", ", wrap, anchor> ];
 
-    constructor(input) {
-        super(input);
-        this._interp = new antlr4.atn.ParserATNSimulator(this, atn, decisionsToDFA, sharedContextCache);
-        this.ruleNames = <parser.name>.ruleNames;
-        this.literalNames = <parser.name>.literalNames;
-        this.symbolicNames = <parser.name>.symbolicNames;
-        <namedActions.members>
-    }
+var ruleNames =  [ <parser.ruleNames:{r | "<r>"}; separator=", ", wrap, anchor> ];
 
-    get atn() {
-        return atn;
-    }
-
-    <if(sempredFuncs)>
-    sempred(localctx, ruleIndex, predIndex) {
-    	switch(ruleIndex) {
-    	<parser.sempredFuncs.values:{f | case <f.ruleIndex>:
-    		return this.<f.name>_sempred(localctx, predIndex);}; separator="\n">
-        default:
-            throw "No predicate with index:" + ruleIndex;
-       }
-    }
-
-    <sempredFuncs.values; separator="\n">
-    <endif>
-
-	<funcs; separator="\n">
-
+function <parser.name> (input) {
+	<superClass; null="antlr4.Parser">.call(this, input);
+    this._interp = new antlr4.atn.ParserATNSimulator(this, atn, decisionsToDFA, sharedContextCache);
+    this.ruleNames = ruleNames;
+    this.literalNames = literalNames;
+    this.symbolicNames = symbolicNames;
+	<namedActions.members>
+    return this;
 }
+
+<parser.name>.prototype = Object.create(<superClass; null="antlr4.Parser">.prototype);
+<parser.name>.prototype.constructor = <parser.name>;
+
+Object.defineProperty(<parser.name>.prototype, "atn", {
+	get : function() {
+		return atn;
+	}
+});
 
 <parser.name>.EOF = antlr4.Token.EOF;
 <if(parser.tokens)>
 <parser.tokens:{k | <parser.name>.<k> = <parser.tokens.(k)>;}; separator="\n", wrap, anchor>
 <endif>
 
-<if(parser.rules)>
 <parser.rules:{r | <parser.name>.RULE_<r.name> = <r.index>;}; separator="\n", wrap, anchor>
+
+<funcs; separator="\n">
+
+<if(sempredFuncs)>
+<parser.name>.prototype.sempred = function(localctx, ruleIndex, predIndex) {
+	switch(ruleIndex) {
+	<parser.sempredFuncs.values:{f | case <f.ruleIndex>:
+		return this.<f.name>_sempred(localctx, predIndex);}; separator="\n">
+    default:
+        throw "No predicate with index:" + ruleIndex;
+   }
+};
+
+<sempredFuncs.values; separator="\n">
 <endif>
 
-<funcs:{f | <ruleContexts(f)>}; separator="\n">
+exports.<parser.name> = <parser.name>;
 
-<! Define fields of this parser to export the context classes !>
-<parser.funcs:{f | <parser.name>.<f.ctxType> = <f.ctxType>; }; separator="\n">
-
->>
-
-ruleContexts(currentRule) ::= <<
-<currentRule.ruleCtx>
-
-<currentRule.altLabelCtxs:{l | <currentRule.altLabelCtxs.(l)>}; separator="\n">
 >>
 
 dumpActions(recog, argFuncs, actionFuncs, sempredFuncs) ::= <<
@@ -230,7 +236,7 @@ case <index>:
  * overriding implementation impossible to maintain.
  */
 RuleSempredFunction(r, actions) ::= <<
-<if (r.factory.g.lexer)><lexer.name>.prototype.<r.name>_sempred = function<else><r.name>_sempred<endif>(localctx, predIndex) {
+<if (r.factory.g.lexer)><lexer.name><else><parser.name><endif>.prototype.<r.name>_sempred = function(localctx, predIndex) {
 	switch(predIndex) {
 		<actions:{index| case <index>:
 	return <actions.(index)>;}; separator="\n">
@@ -243,9 +249,16 @@ RuleSempredFunction(r, actions) ::= <<
 
 RuleFunction(currentRule,args,code,locals,ruleCtx,altLabelCtxs,namedActions,finallyAction,postamble,exceptions) ::= <<
 
+<ruleCtx>
 
-<currentRule.name>(<currentRule.args:{a | <a.name>}; separator=", ">) {
-    let localctx = new <currentRule.ctxType>(this, this._ctx, this.state<currentRule.args:{a | , <a.name>}>);
+<altLabelCtxs:{l | <altLabelCtxs.(l)>}; separator="\n">
+
+<! Define fields of this parser to export the context classes !>
+<parser.name>.<currentRule.ctxType> = <currentRule.ctxType>;
+
+<parser.name>.prototype.<currentRule.name> = function(<currentRule.args:{a | <a.name>}; separator=", ">) {
+
+    var localctx = new <currentRule.ctxType>(this, this._ctx, this.state<currentRule.args:{a | , <a.name>}>);
     this.enterRule(localctx, <currentRule.startState>, <parser.name>.RULE_<currentRule.name>);
     <namedActions.init>
     <locals; separator="\n">
@@ -253,9 +266,10 @@ RuleFunction(currentRule,args,code,locals,ruleCtx,altLabelCtxs,namedActions,fina
         <code>
         <postamble; separator="\n">
         <namedActions.after>
-    }<if(exceptions)>
+    <if(exceptions)>
     <exceptions; separator="\n">
-    <else> catch (re) {
+    <else>
+    } catch (re) {
     	if(re instanceof antlr4.error.RecognitionException) {
 	        localctx.exception = re;
 	        this._errHandler.reportError(this, re);
@@ -268,7 +282,7 @@ RuleFunction(currentRule,args,code,locals,ruleCtx,altLabelCtxs,namedActions,fina
         this.exitRule();
     }
     return localctx;
-}
+};
 
 >>
 
@@ -276,15 +290,18 @@ LeftRecursiveRuleFunction(currentRule,args,code,locals,ruleCtx,altLabelCtxs,
 	namedActions,finallyAction,postamble) ::=
 <<
 
-<currentRule.name>(_p<if(currentRule.args)>, <args:{a | , <a>}><endif>) {
+<ruleCtx>
+<altLabelCtxs:{l | <altLabelCtxs.(l)>}; separator="\n">
+
+<parser.name>.prototype.<currentRule.name> = function(_p<if(currentRule.args)>, <args:{a | , <a>}><endif>) {
 	if(_p===undefined) {
 	    _p = 0;
 	}
-    const _parentctx = this._ctx;
-    const _parentState = this.state;
-    let localctx = new <currentRule.ctxType>(this, this._ctx, _parentState<args:{a | , <a.name>}>);
-    let _prevctx = localctx;
-    const _startState = <currentRule.startState>;
+    var _parentctx = this._ctx;
+    var _parentState = this.state;
+    var localctx = new <currentRule.ctxType>(this, this._ctx, _parentState<args:{a | , <a.name>}>);
+    var _prevctx = localctx;
+    var _startState = <currentRule.startState>;
     this.enterRecursionRule(localctx, <currentRule.startState>, <parser.name>.RULE_<currentRule.name>, _p);
     <namedActions.init>
     <locals; separator="\n">
@@ -305,7 +322,7 @@ LeftRecursiveRuleFunction(currentRule,args,code,locals,ruleCtx,altLabelCtxs,
         this.unrollRecursionContexts(_parentctx)
     }
     return localctx;
-}
+};
 
 >>
 
@@ -580,8 +597,8 @@ ThisRulePropertyRef_text(r)	 ::= "this._input.getText(new antlr4.Interval(localc
 ThisRulePropertyRef_ctx(r)	 ::= "localctx"
 ThisRulePropertyRef_parser(r)	 ::= "this"
 
-NonLocalAttrRef(s)		 	 ::= "this.getInvokingContext(<s.ruleIndex>).<s.name>"
-SetNonLocalAttr(s, rhsChunks)  ::= "this.getInvokingContext(<s.ruleIndex>).<s.name> = <rhsChunks>"
+NonLocalAttrRef(s)		 	 ::= "getInvokingContext(<s.ruleIndex>).<s.name>"
+SetNonLocalAttr(s, rhsChunks)  ::= "getInvokingContext(<s.ruleIndex>).<s.name> = <rhsChunks>"
 
 AddToLabelList(a) ::= "<ctx(a.label)>.<a.listName>.push(<labelref(a.label)>);"
 
@@ -592,16 +609,15 @@ RuleContextDecl(r) ::= "this.<r.name> = null; // <r.ctxName>"
 RuleContextListDecl(rdecl) ::= "this.<rdecl.name> = []; // of <rdecl.ctxName>s"
 
 ContextTokenGetterDecl(t)      ::= <<
-<t.name>() {
+<t.name> = function() {
     return this.getToken(<parser.name>.<t.name>, 0);
 };
 >>
 
 // should never be called
 ContextTokenListGetterDecl(t)  ::= <<
-<t.name>_list() {
-    return this.getTokens(<parser.name>.<t.name>);
-}
+def <t.name>_list(self):
+    return self.getTokens(<parser.name>.<t.name>)
 >>
 
 ContextTokenListIndexedGetterDecl(t)  ::= <<
@@ -619,16 +635,16 @@ ContextTokenListIndexedGetterDecl(t)  ::= <<
 >>
 
 ContextRuleGetterDecl(r)       ::= <<
-<r.name>() {
+<r.name> = function() {
     return this.getTypedRuleContext(<r.ctxName>,0);
 };
 >>
 
 // should never be called
 ContextRuleListGetterDecl(r)   ::= <<
-<r.name>_list() {
-    return this.getTypedRuleContexts(<parser.name>.<r.ctxName>);
-}
+def <r.name>_list(self):
+    return self.getTypedRuleContexts(<parser.name>.<r.ctxName>)
+
 >>
 
 ContextRuleListIndexedGetterDecl(r)   ::= <<
@@ -660,74 +676,73 @@ CaptureNextToken(d) ::= "<d.varName> = self._input.LT(1)"
 CaptureNextTokenType(d) ::= "<d.varName> = this._input.LA(1);"
 
 StructDecl(struct,ctorAttrs,attrs,getters,dispatchMethods,interfaces,extensionMembers) ::= <<
-class <struct.name> extends <if(contextSuperClass)><contextSuperClass><else>antlr4.ParserRuleContext<endif> {
-
-    constructor(parser, parent, invokingState<struct.ctorAttrs:{a | , <a.name>}>) {
-        if(parent===undefined) {
-            parent = null;
-        }
-        if(invokingState===undefined || invokingState===null) {
-            invokingState = -1;
-        }
-        super(parent, invokingState);
-        this.parser = parser;
-        this.ruleIndex = <parser.name>.RULE_<struct.derivedFromName>;
-        <attrs:{a | <a>}; separator="\n">
-        <struct.ctorAttrs:{a | this.<a.name> = <a.name> || null;}; separator="\n">
-    }
-
-	<getters:{g | <g>}; separator="\n\n">
-
-	<if(struct.provideCopyFrom)> <! don't need copy unless we have subclasses !>
-	copyFrom(ctx) {
-		super.copyFrom(ctx);
-		<struct.attrs:{a | this.<a.name> = ctx.<a.name>;}; separator="\n">
+function <struct.name>(parser, parent, invokingState<struct.ctorAttrs:{a | , <a.name>}>) {
+	if(parent===undefined) {
+	    parent = null;
 	}
-	<endif>
-	<dispatchMethods; separator="\n">
-	<extensionMembers; separator="\n">
-
+	if(invokingState===undefined || invokingState===null) {
+		invokingState = -1;
+	}
+	<if(contextSuperClass)><contextSuperClass><else>antlr4.ParserRuleContext<endif>.call(this, parent, invokingState);
+    this.parser = parser;
+    this.ruleIndex = <parser.name>.RULE_<struct.derivedFromName>;
+    <attrs:{a | <a>}; separator="\n">
+    <struct.ctorAttrs:{a | this.<a.name> = <a.name> || null;}; separator="\n">
+    return this;
 }
+
+<struct.name>.prototype = Object.create(<if(contextSuperClass)><contextSuperClass><else>antlr4.ParserRuleContext<endif>.prototype);
+<struct.name>.prototype.constructor = <struct.name>;
+
+<getters:{g | <struct.name>.prototype.<g>}; separator="\n\n">
+
+<if(struct.provideCopyFrom)> <! don't need copy unless we have subclasses !>
+<struct.name>.prototype.copyFrom = function(ctx) {
+    <if(contextSuperClass)><contextSuperClass><else>antlr4.ParserRuleContext<endif>.prototype.copyFrom.call(this, ctx);
+    <struct.attrs:{a | this.<a.name> = ctx.<a.name>;}; separator="\n">
+};
+<endif>
+<dispatchMethods; separator="\n">
+<extensionMembers; separator="\n">
 
 >>
 
 AltLabelStructDecl(struct,attrs,getters,dispatchMethods) ::= <<
-class <struct.name> extends <struct.parentRule; format="cap">Context {
-
-    constructor(parser, ctx) {
-        super(parser);
-        <attrs:{a | <a>;}; separator="\n">
-        super.copyFrom(ctx);
-    }
-
-	<getters:{g | <g>}; separator="\n\n">
-
-	<dispatchMethods; separator="\n">
-
+function <struct.name>(parser, ctx) {
+	<currentRule.name; format="cap">Context.call(this, parser);
+    <attrs:{a | <a>;}; separator="\n">
+    <currentRule.name; format="cap">Context.prototype.copyFrom.call(this, ctx);
+    return this;
 }
+
+<struct.name>.prototype = Object.create(<currentRule.name; format="cap">Context.prototype);
+<struct.name>.prototype.constructor = <struct.name>;
 
 <! Define fields of this parser to export this struct/context class !>
 <parser.name>.<struct.name> = <struct.name>;
 
+<getters:{g | <struct.name>.prototype.<g>}; separator="\n\n">
+<dispatchMethods; separator="\n">
+
 >>
 
 ListenerDispatchMethod(method) ::= <<
-<if(method.isEnter)>enter<else>exit<endif>Rule(listener) {
+<struct.name>.prototype.<if(method.isEnter)>enter<else>exit<endif>Rule = function(listener) {
     if(listener instanceof <parser.grammarName>Listener ) {
         listener.<if(method.isEnter)>enter<else>exit<endif><struct.derivedFromName; format="cap">(this);
 	}
-}
+};
 
 >>
 
 VisitorDispatchMethod(method) ::= <<
-accept(visitor) {
+<struct.name>.prototype.accept = function(visitor) {
     if ( visitor instanceof <parser.grammarName>Visitor ) {
         return visitor.visit<struct.derivedFromName; format="cap">(this);
     } else {
         return visitor.visitChildren(this);
     }
-}
+};
 
 >>
 
@@ -778,7 +793,7 @@ _prevctx = localctx;
 
 LexerFile(lexerFile, lexer, namedActions) ::= <<
 <fileHeader(lexerFile.grammarFileName, lexerFile.ANTLRVersion)>
-import antlr4 from 'antlr4';
+var antlr4 = require('antlr4/index');
 
 <namedActions.header>
 
@@ -788,39 +803,32 @@ import antlr4 from 'antlr4';
 
 Lexer(lexer, atn, actionFuncs, sempredFuncs, superClass) ::= <<
 <if(superClass)>
-import <superClass> from './<superClass>.js';
+var <superClass> = require('./<superClass>').<superClass>;
 <endif>
 
 <atn>
 
-const atn = new antlr4.atn.ATNDeserializer().deserialize(serializedATN);
+var atn = new antlr4.atn.ATNDeserializer().deserialize(serializedATN);
 
-const decisionsToDFA = atn.decisionToState.map( (ds, index) => new antlr4.dfa.DFA(ds, index) );
+var decisionsToDFA = atn.decisionToState.map( function(ds, index) { return new antlr4.dfa.DFA(ds, index); });
 
-export default class <lexer.name> extends <if(superClass)><superClass><else>antlr4.Lexer<endif> {
-
-    static grammarFileName = "<lexer.grammarFileName>";
-    static channelNames = [ "DEFAULT_TOKEN_CHANNEL", "HIDDEN"<if (lexer.channels)>, <lexer.channels:{c| "<c>"}; separator=", ", wrap, anchor><endif> ];
-	static modeNames = [ <lexer.modes:{m| "<m>"}; separator=", ", wrap, anchor> ];
-	static literalNames = [ <lexer.literalNames:{t | <t>}; null="null", separator=", ", wrap, anchor> ];
-	static symbolicNames = [ <lexer.symbolicNames:{t | <t>}; null="null", separator=", ", wrap, anchor> ];
-	static ruleNames = [ <lexer.ruleNames:{r | "<r>"}; separator=", ", wrap, anchor> ];
-
-    constructor(input) {
-        super(input)
-        this._interp = new antlr4.atn.LexerATNSimulator(this, atn, decisionsToDFA, new antlr4.PredictionContextCache());
-        <namedActions.members>
-    }
-
-    get atn() {
-        return atn;
-    }
+function <lexer.name>(input) {
+	<if(superClass)><superClass><else>antlr4.Lexer<endif>.call(this, input);
+    this._interp = new antlr4.atn.LexerATNSimulator(this, atn, decisionsToDFA, new antlr4.PredictionContextCache());
+    return this;
 }
 
+<lexer.name>.prototype = Object.create(<if(superClass)><superClass><else>antlr4.Lexer<endif>.prototype);
+<lexer.name>.prototype.constructor = <lexer.name>;
+
+Object.defineProperty(<lexer.name>.prototype, "atn", {
+        get : function() {
+                return atn;
+        }
+});
+
 <lexer.name>.EOF = antlr4.Token.EOF;
-<if(lexer.tokens)>
 <lexer.tokens:{k | <lexer.name>.<k> = <lexer.tokens.(k)>;}; separator="\n", wrap, anchor>
-<endif>
 
 <if(lexer.channels)>
 <lexer.channels:{c| <lexer.name>.<c> = <lexer.channels.(c)>;}; separator="\n">
@@ -830,16 +838,30 @@ export default class <lexer.name> extends <if(superClass)><superClass><else>antl
 <rest(lexer.modes):{m| <lexer.name>.<m> = <i>;}; separator="\n">
 
 <endif>
+<lexer.name>.prototype.channelNames = [ "DEFAULT_TOKEN_CHANNEL", "HIDDEN"<if (lexer.channels)>, <lexer.channels:{c| "<c>"}; separator=", ", wrap, anchor><endif> ];
+
+<lexer.name>.prototype.modeNames = [ <lexer.modes:{m| "<m>"}; separator=", ", wrap, anchor> ];
+
+<lexer.name>.prototype.literalNames = [ <lexer.literalNames:{t | <t>}; null="null", separator=", ", wrap, anchor> ];
+
+<lexer.name>.prototype.symbolicNames = [ <lexer.symbolicNames:{t | <t>}; null="null", separator=", ", wrap, anchor> ];
+
+<lexer.name>.prototype.ruleNames = [ <lexer.ruleNames:{r | "<r>"}; separator=", ", wrap, anchor> ];
+
+<lexer.name>.prototype.grammarFileName = "<lexer.grammarFileName>";
+
+<namedActions.members>
 
 <dumpActions(lexer, "", actionFuncs, sempredFuncs)>
 
+exports.<lexer.name> = <lexer.name>;
 
 >>
 
 SerializedATN(model) ::= <<
 <! only one segment, can be inlined !>
 
-const serializedATN = ["<model.serialized; wrap={",<\n>    "}>"].join("");
+var serializedATN = ["<model.serialized; wrap={",<\n>    "}>"].join("");
 
 >>
 

@@ -8,9 +8,6 @@ package org.antlr.v4.test.runtime.python3;
 import org.antlr.v4.test.runtime.python.BasePythonTest;
 import org.stringtemplate.v4.ST;
 
-import java.util.Arrays;
-import java.util.List;
-
 import static org.antlr.v4.test.runtime.BaseRuntimeTest.writeFile;
 
 public class BasePython3Test extends BasePythonTest {
@@ -21,9 +18,9 @@ public class BasePython3Test extends BasePythonTest {
 	}
 
 	@Override
-	protected List<String> getPythonExecutables() {
-		return Arrays.asList("python3.7", "python3.8");
-	} // force 3.7 or 3.8
+	protected String getPythonExecutable() {
+		return "python3.6";
+	} // force 3.6
 
 	@Override
 	protected void writeLexerTestFile(String lexerName, boolean showDFA) {
@@ -44,7 +41,7 @@ public class BasePython3Test extends BasePythonTest {
 								: "") + "\n" + "if __name__ == '__main__':\n"
 						+ "    main(sys.argv)\n" + "\n");
 		outputFileST.add("lexerName", lexerName);
-		writeFile(getTempDirPath(), "Test.py", outputFileST.render());
+		writeFile(tmpdir, "Test.py", outputFileST.render());
 	}
 
 	@Override
@@ -102,6 +99,6 @@ public class BasePython3Test extends BasePythonTest {
 		outputFileST.add("listenerName", listenerName);
 		outputFileST.add("visitorName", visitorName);
 		outputFileST.add("parserStartRuleName", parserStartRuleName);
-		writeFile(getTempDirPath(), "Test.py", outputFileST.render());
+		writeFile(tmpdir, "Test.py", outputFileST.render());
 	}
 }

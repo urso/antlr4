@@ -980,7 +980,7 @@ public enum ErrorType {
 	/**
 	 * Compiler Error 174.
 	 *
-	 * <p>empty strings and sets not allowed</p>
+	 * <p>empty strings not allowed</p>
 	 *
 	 * <pre>
 	 * A: '''test''';

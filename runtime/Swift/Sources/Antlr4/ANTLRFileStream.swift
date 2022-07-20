@@ -13,9 +13,10 @@ public class ANTLRFileStream: ANTLRInputStream {
 
     public init(_ fileName: String, _ encoding: String.Encoding? = nil) throws {
         self.fileName = fileName
+        super.init()
         let fileContents = try String(contentsOfFile: fileName, encoding: encoding ?? .utf8)
-        let data = Array(fileContents.unicodeScalars)
-        super.init(data, data.count)
+        data = Array(fileContents)
+        n = data.count
     }
 
     override

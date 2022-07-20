@@ -277,6 +277,16 @@ open class ParserATNSimulator: ATNSimulator {
     internal var _startIndex = 0
     internal var _outerContext: ParserRuleContext!
     internal var _dfa: DFA?
+    
+    /// 
+    /// mutex for DFAState change
+    /// 
+    private let dfaStateMutex = Mutex()
+    
+    /// 
+    /// mutex for changes in a DFAStates map
+    /// 
+    private let dfaStatesMutex = Mutex()
 
 //    /// Testing only!
 //    public convenience init(_ atn : ATN, _ decisionToDFA : [DFA],
@@ -468,7 +478,7 @@ open class ParserATNSimulator: ATNSimulator {
                 if D.requiresFullContext && (mode != PredictionMode.SLL) {
                     // IF PREDS, MIGHT RESOLVE TO SINGLE ALT => SLL (or syntax error)
                     var conflictingAlts = D.configs.conflictingAlts!
-                    if let preds = D.predicates {
+                    if D.predicates != nil {
                         if debug {
                             print("DFA state has preds in DFA sim LL failover")
                         }
@@ -477,7 +487,7 @@ open class ParserATNSimulator: ATNSimulator {
                             try input.seek(startIndex)
                         }
 
-                        conflictingAlts = try evalSemanticContext(preds, outerContext, true)
+                        conflictingAlts = try evalSemanticContext(D.predicates!, outerContext, true)
                         if conflictingAlts.cardinality() == 1 {
                             if debug {
                                 print("Full LL avoided")
@@ -505,13 +515,13 @@ open class ParserATNSimulator: ATNSimulator {
                 }
 
                 if D.isAcceptState {
-                    guard let preds = D.predicates else {
+                    if D.predicates == nil {
                         return D.prediction
                     }
 
                     let stopIndex = input.index()
                     try input.seek(startIndex)
-                    let alts = try evalSemanticContext(preds, outerContext, true)
+                    let alts = try evalSemanticContext(D.predicates!, outerContext, true)
                     switch alts.cardinality() {
                     case 0:
                         throw ANTLRException.recognition(e: noViableAlt(input, outerContext, D.configs, startIndex))
@@ -549,7 +559,7 @@ open class ParserATNSimulator: ATNSimulator {
     /// already cached
     /// 
    func getExistingTargetState(_ previousD: DFAState, _ t: Int) -> DFAState? {
-        let edges = previousD.edges
+        var edges = previousD.edges
         if edges == nil || (t + 1) < 0 || (t + 1) >= (edges!.count) {
             return nil
         }
@@ -1955,7 +1965,7 @@ open class ParserATNSimulator: ATNSimulator {
         if t < -1 || t > atn.maxTokenType {
             return to
         }
-        from.mutex.synchronized {
+        dfaStateMutex.synchronized {
             [unowned self] in
             if from.edges == nil {
                 from.edges = [DFAState?](repeating: nil, count: self.atn.maxTokenType + 1 + 1)       //new DFAState[atn.maxTokenType+1+1];
@@ -1991,7 +2001,7 @@ open class ParserATNSimulator: ATNSimulator {
             return D
         }
         
-        return dfa.statesMutex.synchronized {
+        return dfaStatesMutex.synchronized {
             if let existing = dfa.states[D] {
                 return existing
             }

@@ -278,8 +278,7 @@ func (b *BaseLexer) inputStream() CharStream {
 	return b.input
 }
 
-// SetInputStream resets the lexer input stream and associated lexer state.
-func (b *BaseLexer) SetInputStream(input CharStream) {
+func (b *BaseLexer) setInputStream(input CharStream) {
 	b.input = nil
 	b.tokenFactorySourcePair = &TokenSourceCharStreamPair{b, b.input}
 	b.reset()

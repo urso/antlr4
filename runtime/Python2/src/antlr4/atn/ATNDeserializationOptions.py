@@ -7,15 +7,15 @@ class ATNDeserializationOptions(object):
     defaultOptions = None
 
     def __init__(self, copyFrom = None):
-        self.readonly = False
+        self.readOnly = False
         self.verifyATN = True if copyFrom is None else copyFrom.verifyATN
         self.generateRuleBypassTransitions = False if copyFrom is None else copyFrom.generateRuleBypassTransitions
 
     def __setattr__(self, key, value):
-        if key!="readonly" and self.readonly:
+        if key!="readOnly" and self.readOnly:
             raise Exception("The object is read only.")
         super(type(self), self).__setattr__(key,value)
 
 ATNDeserializationOptions.defaultOptions = ATNDeserializationOptions()
-ATNDeserializationOptions.defaultOptions.readonly = True
+ATNDeserializationOptions.defaultOptions.readOnly = True
 

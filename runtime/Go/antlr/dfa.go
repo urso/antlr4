@@ -26,7 +26,6 @@ type DFA struct {
 	// precedenceDfa is the backing field for isPrecedenceDfa and setPrecedenceDfa.
 	// True if the DFA is for a precedence decision and false otherwise.
 	precedenceDfa bool
-	precedenceDfaMu sync.RWMutex
 }
 
 func NewDFA(atnStartState DecisionState, decision int) *DFA {
@@ -42,22 +41,25 @@ func NewDFA(atnStartState DecisionState, decision int) *DFA {
 // state exists for the specified precedence and nil otherwise. d must be a
 // precedence DFA. See also isPrecedenceDfa.
 func (d *DFA) getPrecedenceStartState(precedence int) *DFAState {
-	if !d.getPrecedenceDfa() {
+	if !d.precedenceDfa {
 		panic("only precedence DFAs may contain a precedence start state")
 	}
 
+	d.s0Mu.RLock()
+	defer d.s0Mu.RUnlock()
+
 	// s0.edges is never nil for a precedence DFA
-	if precedence < 0 || precedence >= len(d.getS0().getEdges()) {
+	if precedence < 0 || precedence >= len(d.s0.edges) {
 		return nil
 	}
 
-	return d.getS0().getIthEdge(precedence)
+	return d.s0.edges[precedence]
 }
 
 // setPrecedenceStartState sets the start state for the current precedence. d
 // must be a precedence DFA. See also isPrecedenceDfa.
 func (d *DFA) setPrecedenceStartState(precedence int, startState *DFAState) {
-	if !d.getPrecedenceDfa() {
+	if !d.precedenceDfa {
 		panic("only precedence DFAs may contain a precedence start state")
 	}
 
@@ -65,23 +67,17 @@ func (d *DFA) setPrecedenceStartState(precedence int, startState *DFAState) {
 		return
 	}
 
+	d.s0Mu.Lock()
+	defer d.s0Mu.Unlock()
+
 	// Synchronization on s0 here is ok. When the DFA is turned into a
 	// precedence DFA, s0 will be initialized once and not updated again. s0.edges
 	// is never nil for a precedence DFA.
-	s0 := d.getS0()
-	if precedence >= s0.numEdges() {
-		edges := append(s0.getEdges(), make([]*DFAState, precedence+1-s0.numEdges())...)
-		s0.setEdges(edges)
-		d.setS0(s0)
+	if precedence >= len(d.s0.edges) {
+		d.s0.edges = append(d.s0.edges, make([]*DFAState, precedence+1-len(d.s0.edges))...)
 	}
 
-	s0.setIthEdge(precedence, startState)
-}
-
-func (d *DFA) getPrecedenceDfa() bool {
-	d.precedenceDfaMu.RLock()
-	defer d.precedenceDfaMu.RUnlock()
-	return d.precedenceDfa
+	d.s0.edges[precedence] = startState
 }
 
 // setPrecedenceDfa sets whether d is a precedence DFA. If precedenceDfa differs
@@ -90,22 +86,20 @@ func (d *DFA) getPrecedenceDfa() bool {
 // store the start states for individual precedence values if precedenceDfa is
 // true or nil otherwise, and d.precedenceDfa is updated.
 func (d *DFA) setPrecedenceDfa(precedenceDfa bool) {
-	if d.getPrecedenceDfa() != precedenceDfa {
-		d.setStates(make(map[int]*DFAState))
+	if d.precedenceDfa != precedenceDfa {
+		d.states = make(map[int]*DFAState)
 
 		if precedenceDfa {
 			precedenceState := NewDFAState(-1, NewBaseATNConfigSet(false))
 
-			precedenceState.setEdges(make([]*DFAState, 0))
+			precedenceState.edges = make([]*DFAState, 0)
 			precedenceState.isAcceptState = false
 			precedenceState.requiresFullContext = false
-			d.setS0(precedenceState)
+			d.s0 = precedenceState
 		} else {
-			d.setS0(nil)
+			d.s0 = nil
 		}
 
-		d.precedenceDfaMu.Lock()
-		defer d.precedenceDfaMu.Unlock()
 		d.precedenceDfa = precedenceDfa
 	}
 }
@@ -127,12 +121,6 @@ func (d *DFA) getState(hash int) (*DFAState, bool) {
 	defer d.statesMu.RUnlock()
 	s, ok := d.states[hash]
 	return s, ok
-}
-
-func (d *DFA) setStates(states map[int]*DFAState) {
-	d.statesMu.Lock()
-	defer d.statesMu.Unlock()
-	d.states = states
 }
 
 func (d *DFA) setState(hash int, state *DFAState) {
@@ -167,7 +155,7 @@ func (d *DFA) sortedStates() []*DFAState {
 }
 
 func (d *DFA) String(literalNames []string, symbolicNames []string) string {
-	if d.getS0() == nil {
+	if d.s0 == nil {
 		return ""
 	}
 
@@ -175,7 +163,7 @@ func (d *DFA) String(literalNames []string, symbolicNames []string) string {
 }
 
 func (d *DFA) ToLexerString() string {
-	if d.getS0() == nil {
+	if d.s0 == nil {
 		return ""
 	}
 

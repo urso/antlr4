@@ -17,7 +17,6 @@ import java.util.ArrayList;
 /** A StructDecl to handle a -&gt; label on alt */
 public class AltLabelStructDecl extends StructDecl {
 	public int altNum;
-	public String parentRule;
 	public AltLabelStructDecl(OutputModelFactory factory, Rule r,
 							  int altNum, String label)
 	{
@@ -25,7 +24,6 @@ public class AltLabelStructDecl extends StructDecl {
 		this.altNum = altNum;
 		this.name = // override name set in super to the label ctx
 			factory.getGenerator().getTarget().getAltLabelContextStructName(label);
-		this.parentRule = r.name;
 		derivedFromName = label;
 	}
 

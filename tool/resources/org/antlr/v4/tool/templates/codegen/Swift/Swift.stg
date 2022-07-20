@@ -138,13 +138,13 @@ import Antlr4
 	 *
 	 * \<p>The default implementation does nothing.\</p>
 	 */
-	<accessLevelOpenOK(file)> func enterEveryRule(_ ctx: ParserRuleContext) throws { }
+	<accessLevelOpenOK(file)> func enterEveryRule(_ ctx: ParserRuleContext) { }
 	/**
 	 * {@inheritDoc\}
 	 *
 	 * \<p>The default implementation does nothing.\</p>
 	 */
-	<accessLevelOpenOK(file)> func exitEveryRule(_ ctx: ParserRuleContext) throws { }
+	<accessLevelOpenOK(file)> func exitEveryRule(_ ctx: ParserRuleContext) { }
 	/**
 	 * {@inheritDoc\}
 	 *
@@ -252,12 +252,10 @@ Parser_(parser, funcs, atn, sempredFuncs, ctor, superClass) ::= <<
 	enum Tokens: Int {
 		case EOF = -1, <parser.tokens:{k | <k> = <parser.tokens.(k)>}; separator=", ", wrap, anchor>
 	}
-	<endif>
+        <endif>
 
 	<accessLevelNotOpen(parser)>
-	<if(parser.rules)>
 	static let <parser.rules:{r | RULE_<r.name> = <r.index>}; separator=", ", wrap, anchor>
-	<endif>
 
 	<accessLevelNotOpen(parser)>
 	static let ruleNames: [String] = [
@@ -356,7 +354,7 @@ func getVocabulary() -> Vocabulary {
 
 override <accessLevelNotOpen(parser)>
 init(_ input:TokenStream) throws {
-    RuntimeMetaData.checkVersion("4.9.3", RuntimeMetaData.VERSION)
+    RuntimeMetaData.checkVersion("4.7.2", RuntimeMetaData.VERSION)
 	try super.init(input)
 	_interp = ParserATNSimulator(self,<p.name>._ATN,<p.name>._decisionToDFA, <parser.name>._sharedContextCache)
 }
@@ -440,10 +438,10 @@ LeftRecursiveRuleFunction(currentRule,args,code,locals,ruleCtx,altLabelCtxs,
 @discardableResult
 private func <currentRule.name>(_ _p<args:{a | , <a>}>: Int) throws -> <currentRule.ctxType>   {
 	let _parentctx: ParserRuleContext? = _ctx
-	let _parentState: Int = getState()
+	var _parentState: Int = getState()
 	var _localctx: <currentRule.ctxType> = <currentRule.ctxType>(_ctx, _parentState<currentRule.args:{a | , <a.name>}>)
-	var _prevctx: <currentRule.ctxType> = _localctx
-	let _startState: Int = <currentRule.startState>
+	var  _prevctx: <currentRule.ctxType> = _localctx
+	var _startState: Int = <currentRule.startState>
 	try enterRecursionRule(_localctx, <currentRule.startState>, <parser.name>.RULE_<currentRule.name>, _p)
 	<namedActions.init>
 	<locals; separator="\n">
@@ -850,11 +848,11 @@ StructDecl(struct,ctorAttrs,attrs,getters,dispatchMethods,interfaces,extensionMe
 	func getRuleIndex() -> Int {
 		return <parser.name>.RULE_<struct.derivedFromName>
 	}
-<if(struct.provideCopyFrom && struct.attrs)> <! don't need copy unless we have subclasses !>
+<if(struct.provideCopyFrom)> <! don't need copy unless we have subclasses !>
+	<! <accessLevelNotOpen(parser)> init() { }!>
 	<accessLevelOpenOK(parser)>
-	override func copyFrom(_ ctx_: ParserRuleContext) {
-		super.copyFrom(ctx_)
-		let ctx = ctx_ as! <struct.name>
+	func copyFrom(_ ctx: <struct.name>) {
+		super.copyFrom(ctx)
 		<struct.attrs:{a | self.<a.name> = ctx.<a.name>;}; separator="\n">
 	}
 <endif>
@@ -979,9 +977,7 @@ Lexer(lexer, atn, actionFuncs, sempredFuncs, superClass) ::= <<
 	internal static let _sharedContextCache = PredictionContextCache()
 
 	<accessLevelNotOpen(lexer)>
-	<if(lexer.tokens)>
 	static let <lexer.tokens:{k | <k>=<lexer.tokens.(k)>}; separator=", ", wrap, anchor>
-	<endif>
 
 	<if(lexer.channels)>
 	<accessLevelNotOpen(lexer)>

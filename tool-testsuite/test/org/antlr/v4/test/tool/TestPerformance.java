@@ -42,7 +42,6 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.antlr.v4.test.runtime.BaseRuntimeTest;
 import org.antlr.v4.test.runtime.ErrorQueue;
-import org.antlr.v4.test.runtime.RuntimeTestUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -702,20 +701,20 @@ public class TestPerformance extends BaseJavaToolTest {
         builder.append(", Grammar=").append(USE_LR_GRAMMAR ? "LR" : "Standard");
         builder.append(", ForceAtn=").append(FORCE_ATN);
 
-        builder.append(NEW_LINE);
+        builder.append(newline);
 
         builder.append("Op=Lex").append(RUN_PARSER ? "+Parse" : " only");
         builder.append(", Strategy=").append(BAIL_ON_ERROR ? BailErrorStrategy.class.getSimpleName() : DefaultErrorStrategy.class.getSimpleName());
         builder.append(", BuildParseTree=").append(BUILD_PARSE_TREES);
         builder.append(", WalkBlankListener=").append(BLANK_LISTENER);
 
-        builder.append(NEW_LINE);
+        builder.append(newline);
 
         builder.append("Lexer=").append(REUSE_LEXER ? "setInputStream" : "newInstance");
         builder.append(", Parser=").append(REUSE_PARSER ? "setInputStream" : "newInstance");
         builder.append(", AfterPass=").append(CLEAR_DFA ? "newInstance" : "setInputStream");
 
-        builder.append(NEW_LINE);
+        builder.append(newline);
 
         return builder.toString();
     }
@@ -1136,7 +1135,7 @@ public class TestPerformance extends BaseJavaToolTest {
 
     protected ParserFactory getParserFactory(String lexerName, String parserName, String listenerName, final String entryPoint) {
         try {
-            ClassLoader loader = new URLClassLoader(new URL[] { getTempTestDir().toURI().toURL() }, ClassLoader.getSystemClassLoader());
+            ClassLoader loader = new URLClassLoader(new URL[] { new File(tmpdir).toURI().toURL() }, ClassLoader.getSystemClassLoader());
             final Class<? extends Lexer> lexerClass = loader.loadClass(lexerName).asSubclass(Lexer.class);
             final Class<? extends Parser> parserClass = loader.loadClass(parserName).asSubclass(Parser.class);
             final Class<? extends ParseTreeListener> listenerClass = loader.loadClass(listenerName).asSubclass(ParseTreeListener.class);
@@ -1953,7 +1952,7 @@ public class TestPerformance extends BaseJavaToolTest {
 			"\n" +
 			"rule_%d_%d : EOF;\n";
 
-		RuntimeTestUtils.mkdir(getTempDirPath());
+		BaseRuntimeTest.mkdir(tmpdir);
 
 		long startTime = System.nanoTime();
 
@@ -1961,14 +1960,14 @@ public class TestPerformance extends BaseJavaToolTest {
 		for (int level = 0; level < levels; level++) {
 			String leafPrefix = level == levels - 1 ? "//" : "";
 			String grammar1 = String.format(grammarFormat, level, 1, leafPrefix, level + 1, level + 1, level, 1);
-			writeFile(getTempDirPath(), "Level_" + level + "_1.g4", grammar1);
+			writeFile(tmpdir, "Level_" + level + "_1.g4", grammar1);
 			if (level > 0) {
 				String grammar2 = String.format(grammarFormat, level, 2, leafPrefix, level + 1, level + 1, level, 1);
-				writeFile(getTempDirPath(), "Level_" + level + "_2.g4", grammar2);
+				writeFile(tmpdir, "Level_" + level + "_2.g4", grammar2);
 			}
 		}
 
-		ErrorQueue equeue = BaseRuntimeTest.antlrOnString(getTempDirPath(), "Java", "Level_0_1.g4", false);
+		ErrorQueue equeue = BaseRuntimeTest.antlrOnString(tmpdir, "Java", "Level_0_1.g4", false);
 		Assert.assertTrue(equeue.errors.isEmpty());
 
 		long endTime = System.nanoTime();

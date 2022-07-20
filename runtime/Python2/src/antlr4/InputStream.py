@@ -15,9 +15,9 @@ import sys
 
 class InputStream (object):
 
-    def __init__(self, data, encoding = "ascii"):
+    def __init__(self, data):
         self.name = "<empty>"
-        self.strdata = data if isinstance(data, unicode) else unicode(data, encoding)
+        self.strdata = unicode(data)
         self._loadString()
 
     def _loadString(self):

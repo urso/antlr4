@@ -92,16 +92,23 @@ public final class LexerCustomAction: LexerAction {
         try lexer.action(nil, ruleIndex, actionIndex)
     }
 
-    public override func hash(into hasher: inout Hasher) {
-        hasher.combine(ruleIndex)
-        hasher.combine(actionIndex)
+    override
+    public var hashValue: Int {
+        var hash = MurmurHash.initialize()
+        hash = MurmurHash.update(hash, getActionType().rawValue)
+        hash = MurmurHash.update(hash, ruleIndex)
+        hash = MurmurHash.update(hash, actionIndex)
+        return MurmurHash.finish(hash, 3)
     }
+
 }
 
 public func ==(lhs: LexerCustomAction, rhs: LexerCustomAction) -> Bool {
+
     if lhs === rhs {
         return true
     }
+
 
     return lhs.ruleIndex == rhs.ruleIndex
             && lhs.actionIndex == rhs.actionIndex

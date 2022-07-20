@@ -126,11 +126,20 @@ public class ATNConfig: Hashable, CustomStringConvertible {
         }
     }
 
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(state.stateNumber)
-        hasher.combine(alt)
-        hasher.combine(context)
-        hasher.combine(semanticContext)
+    /// 
+    /// An ATN configuration is equal to another if both have
+    /// the same state, they predict the same alternative, and
+    /// syntactic/semantic contexts are the same.
+    /// 
+
+    public var hashValue: Int {
+        var hashCode = MurmurHash.initialize(7)
+        hashCode = MurmurHash.update(hashCode, state.stateNumber)
+        hashCode = MurmurHash.update(hashCode, alt)
+        hashCode = MurmurHash.update(hashCode, context)
+        hashCode = MurmurHash.update(hashCode, semanticContext)
+        return MurmurHash.finish(hashCode, 4)
+
     }
 
     public var description: String {
@@ -157,11 +166,6 @@ public class ATNConfig: Hashable, CustomStringConvertible {
     }
 }
 
-///
-/// An ATN configuration is equal to another if both have
-/// the same state, they predict the same alternative, and
-/// syntactic/semantic contexts are the same.
-///
 public func ==(lhs: ATNConfig, rhs: ATNConfig) -> Bool {
 
     if lhs === rhs {

@@ -14,9 +14,9 @@ Cast(t,v) ::= "<v>"
 
 Append(a,b) ::= "<a> + <b>"
 
-AppendStr(a,b) ::= <%<Append(a,b)>%>
-
 Concat(a,b) ::= "<a><b>"
+
+DeclareLocal(s,v) ::= "var <s> = <v>;"
 
 AssertIsList(v) ::= <<if ( !(v instanceof Array) ) {throw "value is not an array";}>>
 
@@ -26,17 +26,13 @@ InitIntMember(n,v) ::= <%this.<n> = <v>;%>
 
 InitBooleanMember(n,v) ::= <%this.<n> = <v>;%>
 
-InitIntVar(n,v) ::= <%<InitIntMember(n,v)>%>
-
-IntArg(n) ::= "<n>"
-
-VarRef(n) ::= "<n>"
-
 GetMember(n) ::= <%this.<n>%>
 
 SetMember(n,v) ::= <%this.<n> = <v>;%>
 
 AddMember(n,v) ::= <%this.<n> += <v>;%>
+
+PlusMember(v,n) ::= <%<v> + this.<n>%>
 
 MemberEquals(n,v) ::= <%this.<n> === <v>%>
 
@@ -74,7 +70,11 @@ LANotEquals(i, v) ::= <%this._input.LA(<i>)!=<v>%>
 
 TokenStartColumnEquals(i) ::= <%this._tokenStartColumn===<i>%>
 
-ImportListener(X) ::= ""
+ImportListener(X) ::= <<
+@parser::header {
+var <X>Listener = require('./<X>Listener').<X>Listener;
+}
+>>
 
 GetExpectedTokenNames() ::= "this.getExpectedTokens().toString(this.literalNames)"
 
@@ -97,8 +97,6 @@ this.Property = function() {
 >>
 
 ParserPropertyCall(p, call) ::= "<p>.<call>"
-
-PositionAdjustingLexerDef() ::= ""
 
 PositionAdjustingLexer() ::= <<
 
@@ -184,20 +182,17 @@ walker.walk(new this.LeafListener(), <s>);
 
 TreeNodeWithAltNumField(X) ::= <<
 @parser::header {
-class MyRuleNode extends antlr4.ParserRuleContext {
-    constructor(parent, invokingState) {
-        super(parent, invokingState);
-        this.altNum = 0;
-    }
+MyRuleNode = function(parent, invokingState) {
+	antlr4.ParserRuleContext.call(this, parent, invokingState);
 
-    getAltNumber() {
-        return this.altNum;
-    }
-
-    setAltNumber(altNumber){
-        this.altNum = altNumber;
-    }
+	this.altNum = 0;
+	return this;
 };
+
+MyRuleNode.prototype = Object.create(antlr4.ParserRuleContext.prototype);
+MyRuleNode.prototype.constructor = MyRuleNode;
+MyRuleNode.prototype.getAltNumber = function() { return this.altNum; }
+MyRuleNode.prototype.setAltNumber = function(altNumber) { this.altNum = altNumber; }
 
 }
 >>

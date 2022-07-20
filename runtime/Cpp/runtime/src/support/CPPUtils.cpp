@@ -46,14 +46,12 @@ namespace antlrcpp {
 
         case ' ':
           if (escapeSpaces) {
-            result += "\u00B7";
+            result += "·";
             break;
           }
           // else fall through
-#ifndef _MSC_VER
 #if __has_cpp_attribute(clang::fallthrough)
           [[clang::fallthrough]];
-#endif
 #endif
 
         default:
@@ -200,6 +198,12 @@ namespace antlrcpp {
 
     result += std::string(nestCount, ')');
     return result;
+  }
+
+  //----------------- FinallyAction ------------------------------------------------------------------------------------
+
+  FinalAction finally(std::function<void ()> f) {
+    return FinalAction(f);
   }
 
   //----------------- SingleWriteMultipleRead --------------------------------------------------------------------------

@@ -10,12 +10,8 @@ fragment TextPresentationCharacter: [\p{EmojiPresentation=TextDefault}];
 fragment EmojiPresentationCharacter: [\p{EmojiPresentation=EmojiDefault}];
 fragment TextPresentationSequence: EmojiPresentationCharacter VS15;
 fragment EmojiPresentationSequence: TextPresentationCharacter VS16;
-
-/* No Longer supported; see https://github.com/antlr/antlr4/pull/3261
 fragment EmojiModifierSequence:
     [\p{Grapheme_Cluster_Break=E_Base}\p{Grapheme_Cluster_Break=E_Base_GAZ}] [\p{Grapheme_Cluster_Break=E_Modifier}];
-*/
-
 fragment EmojiFlagSequence:
     [\p{Grapheme_Cluster_Break=Regional_Indicator}] [\p{Grapheme_Cluster_Break=Regional_Indicator}];
 fragment ExtendedPictographic: [\p{Extended_Pictographic}];
@@ -26,10 +22,12 @@ fragment EmojiCombiningSequence:
     | EmojiPresentationCharacter )
   NonspacingMark*;
 EmojiCoreSequence:
-    EmojiCombiningSequence
+    EmojiModifierSequence
+  | EmojiCombiningSequence
   | EmojiFlagSequence;
 fragment EmojiZWJElement:
-    EmojiPresentationSequence
+    EmojiModifierSequence
+  | EmojiPresentationSequence
   | EmojiPresentationCharacter
   | ExtendedPictographic
   | EmojiNRK;

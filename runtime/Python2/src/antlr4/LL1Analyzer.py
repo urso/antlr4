@@ -129,16 +129,16 @@ class LL1Analyzer (object):
                 return
 
             if ctx != PredictionContext.EMPTY:
-                removed = s.ruleIndex in calledRuleStack
-                try:
-                    calledRuleStack.discard(s.ruleIndex)
-                    # run thru all possible stack tops in ctx
-                    for i in range(0, len(ctx)):
-                        returnState = self.atn.states[ctx.getReturnState(i)]
+                # run thru all possible stack tops in ctx
+                for i in range(0, len(ctx)):
+                    returnState = self.atn.states[ctx.getReturnState(i)]
+                    removed = returnState.ruleIndex in calledRuleStack
+                    try:
+                        calledRuleStack.discard(returnState.ruleIndex)
                         self._LOOK(returnState, stopState, ctx.getParent(i), look, lookBusy, calledRuleStack, seeThruPreds, addEOF)
-                finally:
-                    if removed:
-                        calledRuleStack.add(s.ruleIndex)
+                    finally:
+                        if removed:
+                            calledRuleStack.add(returnState.ruleIndex)
                 return
 
         for t in s.transitions:
@@ -163,8 +163,8 @@ class LL1Analyzer (object):
             elif type(t) == WildcardTransition:
                 look.addRange( Interval(Token.MIN_USER_TOKEN_TYPE, self.atn.maxTokenType + 1) )
             else:
-                set_ = t.label
-                if set_ is not None:
+                set = t.label
+                if set is not None:
                     if isinstance(t, NotSetTransition):
-                        set_ = set_.complement(Token.MIN_USER_TOKEN_TYPE, self.atn.maxTokenType)
-                    look.addSet(set_)
+                        set = set.complement(Token.MIN_USER_TOKEN_TYPE, self.atn.maxTokenType)
+                    look.addSet(set)

@@ -261,8 +261,8 @@ open class ParserRuleContext: RuleContext {
     /// Used for rule context info debugging during parse-time, not so much for ATN debugging
     open func toInfoString(_ recognizer: Parser) -> String {
         let rules = Array(recognizer.getRuleInvocationStack(self).reversed())
-        let startStr = start?.description ?? "<unknown>"
-        let stopStr = stop?.description ?? "<unknown>"
+        let startStr = start == nil ? "<unknown>" : start!.description
+        let stopStr = stop == nil ? "<unknown>" : stop!.description
         return "ParserRuleContext\(rules){start=\(startStr)), stop=\(stopStr)}"
     }
 }

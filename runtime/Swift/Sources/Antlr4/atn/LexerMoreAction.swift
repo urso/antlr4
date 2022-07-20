@@ -56,9 +56,14 @@ public final class LexerMoreAction: LexerAction, CustomStringConvertible {
     }
 
 
-    public override func hash(into hasher: inout Hasher) {
-        hasher.combine(ObjectIdentifier(self))
+    override
+    public var hashValue: Int {
+        var hash = MurmurHash.initialize()
+        hash = MurmurHash.update(hash, getActionType().rawValue)
+        return MurmurHash.finish(hash, 1)
+
     }
+
 
     public var description: String {
         return "more"
@@ -66,5 +71,8 @@ public final class LexerMoreAction: LexerAction, CustomStringConvertible {
 }
 
 public func ==(lhs: LexerMoreAction, rhs: LexerMoreAction) -> Bool {
+
     return lhs === rhs
+
+
 }

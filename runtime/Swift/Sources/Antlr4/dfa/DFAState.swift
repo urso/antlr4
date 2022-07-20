@@ -76,11 +76,6 @@ public final class DFAState: Hashable, CustomStringConvertible {
     /// 
 
     public internal(set) var predicates: [PredPrediction]?
-    
-    ///
-    /// mutex for states changes.
-    ///
-    internal private(set) var mutex = Mutex()
 
     /// 
     /// Map a predicate to a predicted alternative.
@@ -114,8 +109,10 @@ public final class DFAState: Hashable, CustomStringConvertible {
     }
 
 
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(configs)
+    public var hashValue: Int {
+        var hash = MurmurHash.initialize(7)
+        hash = MurmurHash.update(hash, configs.hashValue)
+        return MurmurHash.finish(hash, 1)
     }
 
     public var description: String {

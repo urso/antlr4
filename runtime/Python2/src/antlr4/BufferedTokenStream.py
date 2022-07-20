@@ -196,17 +196,17 @@ class BufferedTokenStream(TokenStream):
 
 
     # Given a starting index, return the index of the next token on channel.
-    #  Return i if tokens[i] is on channel.  Return the index of the EOF toekn
-    #  if there are no tokens on channel between i and EOF.
+    #  Return i if tokens[i] is on channel.  Return -1 if there are no tokens
+    #  on channel between i and EOF.
     #/
     def nextTokenOnChannel(self, i, channel):
         self.sync(i)
         if i>=len(self.tokens):
-            return len(self.tokens) - 1
+            return -1
         token = self.tokens[i]
         while token.channel!=channel:
             if token.type==Token.EOF:
-                return i
+                return -1
             i += 1
             self.sync(i)
             token = self.tokens[i]
@@ -269,31 +269,35 @@ class BufferedTokenStream(TokenStream):
     def getSourceName(self):
         return self.tokenSource.getSourceName()
 
-    def getText(self, start=None, stop=None):
+    def getText(self, interval=None):
         """
         Get the text of all tokens in this buffer.
+
+        :param interval:
+        :type interval: antlr4.IntervalSet.Interval
         :return: string
         """
         self.lazyInit()
         self.fill()
+        if interval is None:
+            interval = (0, len(self.tokens)-1)
+        start = interval[0]
         if isinstance(start, Token):
             start = start.tokenIndex
-        elif start is None:
-            start = 0
+        stop = interval[1]
         if isinstance(stop, Token):
             stop = stop.tokenIndex
-        elif stop is None or stop >= len(self.tokens):
-            stop = len(self.tokens) - 1
-        if start < 0 or stop < 0 or stop<start:
-            return u""
+        if start is None or stop is None or start<0 or stop<0:
+            return ""
+        if stop >= len(self.tokens):
+            stop = len(self.tokens)-1
         with StringIO() as buf:
-            for i in xrange(start, stop+1):
+            for i in range(start, stop+1):
                 t = self.tokens[i]
                 if t.type==Token.EOF:
                     break
                 buf.write(t.text)
             return buf.getvalue()
-
 
     def fill(self):
         """
